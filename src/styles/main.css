@@ -1,0 +1,56 @@
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/public/images/hero-background.jpg');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: white;
+  padding: 100px 0;
+  margin-bottom: 30px;
+
+}
+
+/* Gallery Items */
+.product-carousel img {
+  height: 400px;
+  object-fit: contain;
+  background-color: #f8f9fa;
+}
+
+.gallery-item {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-item:hover {
+  transform: scale(1.03);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.gallery-item img {
+  height: 250px;
+  object-fit: cover;
+}
+
+
+.gallery-item-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.gallery-item-link:hover {
+  color: inherit;
+}
+
+/* About Page */
+.about-image {
+  max-width: 100%;
+  border-radius: 5px;
+}
+
+/* Contact Form */
+.contact-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
