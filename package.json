@@ -1,5 +1,7 @@
 {
   "name": "chainlair-portfolio",
+  "homepage": "https://thechainlair.com",
+  "author": {"name": "Manuel Alberto Moran Lazaro"},
   "version": "0.1.0",
   "private": true,
   "dependencies": {
