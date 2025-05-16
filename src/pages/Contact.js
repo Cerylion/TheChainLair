@@ -52,9 +52,9 @@ const Contact = () => {
     setSubmissionError('');
     
     
-    const serviceId = 'Chain_Lair_ContactForm';
-    const templateId = 'ChainLair_Contact_Temp';
-    const publicKey = 'EA5og4aHxoT3n-m31';
+    const serviceId = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+    const templateId = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+    const publicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
     
     // Prepare template parameters
     const templateParams = {
