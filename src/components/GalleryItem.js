@@ -6,7 +6,7 @@ const GalleryItem = ({ work }) => {
 
   const imageUrl = work.images && work.images.length > 0 
     ? work.images[0] 
-    : '/images/placeholder.jpg';
+    : 'https://lh3.googleusercontent.com/d/1m75dzoP_RBT4WIXQstCaxe-_s6LUUsEv';
 
   return (
     <Link to={`/product/${work.id}`} className="gallery-item-link">

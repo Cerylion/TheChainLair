@@ -2,12 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/main.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
-// Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
-// Pages
 import Home from './pages/Home';
 import About from './pages/About';
 import Gallery from './pages/Gallery';

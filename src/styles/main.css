@@ -1,6 +1,6 @@
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/public/images/hero-background.jpg');
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://lh3.googleusercontent.com/d/1rBAyn68zhDOjzAjtmE5qFOoX1RZ6EpSk');
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -144,11 +144,37 @@
 /* About Page */
 .about-image {
   max-width: 100%;
-  border-radius: 5px;
 }
 
 /* Contact Form */
 .contact-form {
   max-width: 600px;
   margin: 0 auto;
+}
+
+/* Footer Styles */
+footer {
+  margin-top: auto;
+}
+
+footer a {
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+footer a:hover {
+  opacity: 0.8;
+}
+
+.social-links {
+  font-size: 1.2rem;
+}
+
+.social-links a {
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.social-links a:hover {
+  transform: translateY(-3px);
 }

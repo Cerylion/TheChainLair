@@ -5,7 +5,7 @@ const About = () => {
   return (
     <Container className="py-5">
       <Row className="mb-5">
-        <Col lg={8} className="mx-auto text-center">
+        <Col lg={8} className=" w-70 mx-auto text-center">
           <h1 className="mb-4">About The Chain Lair</h1>
           <p className="lead">
             Creating fun and interesting chainmaille art and jewelry with passion and precision since 2003.
@@ -13,13 +13,13 @@ const About = () => {
         </Col>
       </Row>
 
-      <Row className="align-items-center mb-5">
-        <Col md={6}>
+      <Row className="mb-5">
+        <Col md={5}>
           <Image 
-            src="/images/AboutMe.jpeg" 
-            alt="Artist photo" 
-            fluid 
-            className="about-image mb-4 mb-md-0" 
+            src="https://lh3.googleusercontent.com/d/1KkAh5wBsd0yn1sp7B8SXHQ4ileHf_oxy"
+            alt="Artist photo"
+            class="img-fluid float-right"
+            className="about-image mb-4 mb-md-0 mx-auto d-block" 
           />
         </Col>
         <Col md={6}>
@@ -27,7 +27,10 @@ const About = () => {
           <p>
             Hello! I'm Manuel Morán, the artist and craftsperson behind The Chain Lair. 
             My journey with chainmaille began when I met my first crew of misfits back on university. I was studying Psychology, and they were studying Computer Sciences. With them I discovered the 
-            fascinating clash between a historical craft and modern design possibilities.
+            fascinating clash between a historical craft and modern design possibilities.  
+          </p>
+          <p>
+            To the left, you can see a picture of me from 2006 displaying a handcrafted skirt with 4 different weaves plus scalemaille. All the sacles are beer bottles. You can also appreciate a dice bag and 2 different necklaces. I was also wearing scale shoulder pads, woven directly into the shirt.
           </p>
           <p>
             With over 22 years of experience in chainmaille techniques, 

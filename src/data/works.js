@@ -5,8 +5,8 @@ export const allWorks = [
     description: "Nickel Coated Pyramid Night Lamp, 110v ~ 220v, Dimmable LED Chip, perfect to set a mood or to keep a low light on corridors or children rooms",
     shortDescription: "Nightlight, perfect to set a mood",
     images: [
-      "/images/Pyramid 01.jpg",
-      "/images/Pyramid TopView.jpg"
+      "https://lh3.googleusercontent.com/d/16t_Ik07NHfKO6aIjHAFIz993FpPbpUP4",
+      "https://lh3.googleusercontent.com/d/153KnKgPgSp8D8wj81fO3sxYWyTlkjUzX"
     ],
     details: {
       materials: "Niquel Coated Steel",
@@ -24,8 +24,8 @@ export const allWorks = [
     description: "Handcrafted chainmaille shoulder bag made with galvanized steel rings in European 4-in-1 weave. Perfect for everyday essentials or special occasions. The bag features a reinforced strap and no interior lining.",
     shortDescription: "Cross-shoulder style, great for books, laptops or tablets",
     images: [
-      "/images/Bag Book1.jpg",
-      "/images/Bag Book2.jpg"
+      "https://lh3.googleusercontent.com/d/1d7lUphjywDeCjeSKK9yemc9GDylRReVd",
+      "https://lh3.googleusercontent.com/d/1qzGnHO_mECEVIEpqAwtbeDXbC6zlcrfE"
     ],
     details: {
       materials: "Galvanized Steel",
@@ -44,8 +44,8 @@ export const allWorks = [
     shortDescription: "Steel Coif - 1-size-fits-all",
     description: "Great protection for neck and head, this galvanized steel piece is just fun to wear to your favorite larping session, or even to the supermarket.",
     images: [
-      "/images/Coif1.jpg",
-      "/images/Coif1mini3.jpg"
+      "https://lh3.googleusercontent.com/d/1AnlbPiChROgNLlxseH02zgfqmA0GejqK",
+      "https://lh3.googleusercontent.com/d/1876gykLxgC7PUIrlVYq7L13Oj0uKWcM2"
     ],
     details: {
       materials: "Galvanized Steel",
