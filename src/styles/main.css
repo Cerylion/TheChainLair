@@ -7,7 +7,6 @@
   color: white;
   padding: 100px 0;
   margin-bottom: 30px;
-
 }
 
 /* Gallery Items */
@@ -32,7 +31,6 @@
   object-fit: cover;
 }
 
-
 .gallery-item-link {
   text-decoration: none;
   color: inherit;
@@ -41,6 +39,106 @@
 
 .gallery-item-link:hover {
   color: inherit;
+}
+
+/* Thumbnail styles */
+.product-thumbnails {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.thumbnail-wrapper {
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.thumbnail-wrapper.active-thumbnail {
+  border-color: #0d6efd;
+}
+
+.thumbnail-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+}
+
+/* Image protection styles */
+.protected-image {
+  user-select: none;
+  pointer-events: none;
+  position: relative;
+}
+
+.image-watermark {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+/* Custom Lightbox Styles */
+.lightbox-modal .modal-content {
+  background-color: rgba(0, 0, 0, 0.9);
+  border: none;
+}
+
+.lightbox-container {
+  padding: 20px;
+}
+
+.lightbox-image {
+  max-height: calc(100vh - 150px);
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.lightbox-navigation {
+  margin-top: 15px;
+}
+
+.lightbox-nav-btn {
+  border-radius: 30px;
+  padding: 8px 20px;
+}
+
+/* Additional carousel zoom styles */
+.product-carousel .carousel-item {
+  cursor: zoom-in;
+}
+
+/* Override bootstrap carousel controls to ensure they're above the zoom container */
+.carousel-control-prev,
+.carousel-control-next {
+  z-index: 5;
+}
+
+/* Ensure the carousel images have consistent height */
+.product-carousel .zoom-container {
+  height: 400px; /* Adjust height as needed */
+}
+
+.product-carousel .zoom-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Override image-magnify styles to allow zooming but prevent right-click */
+.protected-image .rmsc-container {
+  pointer-events: auto;
+}
+
+.protected-image img {
+  pointer-events: none;
 }
 
 /* About Page */
