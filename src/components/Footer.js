@@ -1,4 +1,3 @@
-// pages/About.js (example)
 import React from 'react';
 
 const Footer = () => {
