@@ -25,9 +25,9 @@ const About = () => {
         <Col md={6}>
           <h2>The Artist</h2>
           <p>
-            Hello! I'm Manuel Morán, the artist and craftsperson behind The Chain Lair. 
+            Hello! I'm Manuel Morán, the artist and craftsperson behind The Chain Lair.
             My journey with chainmaille began when I met my first crew of misfits back on university. I was studying Psychology, and they were studying Computer Sciences. With them I discovered the 
-            fascinating clash between a historical craft and modern design possibilities.  
+            fascinating clash between a historical craft and modern design possibilities.
           </p>
           <p>
             To the left, you can see a picture of me from 2006 displaying a handcrafted skirt with 4 different weaves plus scalemaille. All the sacles are beer bottles. You can also appreciate a dice bag and 2 different necklaces. I was also wearing scale shoulder pads, woven directly into the shirt.
