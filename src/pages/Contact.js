@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import React, { useState, useEffect, useRef } from 'react';
+import { Container, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { useLocation } from 'react-router-dom';
+import emailjs from '@emailjs/browser';
 
 const Contact = () => {
   const location = useLocation();
+  const form = useRef()
 
   const getInitialSubject = () => {
     const queryParams = new URLSearchParams(location.search);
@@ -12,6 +14,8 @@ const Contact = () => {
 
   const [validated, setValidated] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -40,14 +44,45 @@ const Contact = () => {
     
     if (form.checkValidity() === false) {
       event.stopPropagation();
-    } else {
-      // Here you would typically send the data to a server
-      // For now, we'll just show a success message
-      setSubmitted(true);
-      setFormData({ name: '', email: '', subject: getInitialSubject(), message: '' });
+      return
     }
     
-    setValidated(true);
+    
+    setIsSubmitting(true);
+    setSubmissionError('');
+    
+    
+    const serviceId = 'Chain_Lair_ContactForm';
+    const templateId = 'ChainLair_Contact_Temp';
+    const publicKey = 'EA5og4aHxoT3n-m31';
+    
+    // Prepare template parameters
+    const templateParams = {
+      name: formData.name,
+      email: formData.email,
+      subject: formData.subject,
+      message: formData.message
+    };
+    
+    emailjs.send(serviceId, templateId, templateParams, publicKey)
+      .then((response) => {
+        console.log('Email sent successfully:', response.status, response.text);
+        setSubmitted(true);
+        setFormData({ 
+          name: '', 
+          email: '', 
+          subject: getInitialSubject(), 
+          message: '' 
+        });
+        setValidated(false);
+      })
+      .catch((err) => {
+        console.error('Email sending failed:', err);
+        setSubmissionError('Failed to send message. Please try again or contact directly via email.');
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   return (
@@ -132,8 +167,15 @@ const Contact = () => {
             </Form.Group>
             
             <div className="d-grid">
-              <Button type="submit" variant="primary" size="lg">
-                Send Message
+              <Button type="submit" variant="primary" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2"/>
+                    Sending...
+                  </>
+                ) : (
+                  'Send Message'
+                )}
               </Button>
             </div>
           </Form>
