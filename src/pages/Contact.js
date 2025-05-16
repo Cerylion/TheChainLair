@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import { useLocation } from 'react-router-dom';
 
 const Contact = () => {
+  const location = useLocation();
+
+  const getInitialSubject = () => {
+    const queryParams = new URLSearchParams(location.search);
+    return queryParams.get('subject') || '';
+  };
+
   const [validated, setValidated] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subject: '',
+    subject: getInitialSubject(),
     message: ''
   });
+
+  useEffect(() => {
+    setFormData(prevData => ({
+      ...prevData,
+      subject: getInitialSubject()
+    }));
+  }, [location.search]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,7 +44,7 @@ const Contact = () => {
       // Here you would typically send the data to a server
       // For now, we'll just show a success message
       setSubmitted(true);
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      setFormData({ name: '', email: '', subject: getInitialSubject(), message: '' });
     }
     
     setValidated(true);
@@ -62,7 +77,7 @@ const Contact = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Jane Doe"
+                  placeholder="J. Doe"
                 />
                 <Form.Control.Feedback type="invalid">
                   Please provide your name.
@@ -77,7 +92,7 @@ const Contact = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="jane@example.com"
+                  placeholder="jDoe@example.com"
                 />
                 <Form.Control.Feedback type="invalid">
                   Please provide a valid email.

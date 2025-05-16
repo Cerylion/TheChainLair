@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, ListGroup, Button, Carousel, Modal } from 'react-bootstrap';
 import { getWorkById } from '../data/works';
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(getWorkById(id));
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
@@ -55,6 +56,10 @@ const ProductDetail = () => {
   
   const handleLightboxNext = () => {
     setCurrentImageIndex((currentImageIndex + 1) % images.length);
+  };
+
+  const handleContactClick = () => {
+    navigate(`/contact?subject=Inquiry about: ${encodeURIComponent(product.title)}`);
   };
 
   return (
@@ -132,7 +137,7 @@ const ProductDetail = () => {
           ) : null}
           
           <div className="d-grid gap-2">
-            <Button variant="primary" size="lg">
+            <Button variant="primary" size="lg" onClick={handleContactClick}>
               Contact About This Piece
             </Button>
           </div>
