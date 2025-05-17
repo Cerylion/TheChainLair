@@ -39,7 +39,7 @@ const ProductDetail = () => {
   }
   
   const hasImages = product.images && Array.isArray(product.images) && product.images.length > 0;
-  const images = hasImages ? product.images : ['/images/placeholder.jpg'];
+  const images = hasImages ? product.images : ['https://lh3.googleusercontent.com/d/1m75dzoP_RBT4WIXQstCaxe-_s6LUUsEv'];
 
     const openLightbox = (index) => {
       setCurrentImageIndex(index);
