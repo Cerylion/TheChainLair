@@ -1,8 +1,8 @@
 import { SitemapStream, streamToPromise } from 'sitemap';
 import { Readable } from 'stream';
-import products from '../src/data/works.js';
+import { allWorks } from '../src/data/works.js';
 
-const productLinks = products.map(p => ({
+const productLinks = allWorks.map(p => ({
   url: `/product/${p.id}`,
   changefreq: 'monthly',
   priority: 0.7,
