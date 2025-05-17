@@ -8,7 +8,7 @@ const Home = () => {
     <>
       <header className="hero-section">
         <Container className="text-center py-5">
-          <h1>Chainmaille Artistry</h1>
+          <h1>The Chain Lair | Chainmaille Artistry, Wearables, Lamps and More...</h1>
           <p className="lead">Handcrafted chainmaille jewelry and art pieces</p>
           <Link to="/gallery">
             <Button variant="primary" size="lg">View Gallery</Button>
