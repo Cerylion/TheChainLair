@@ -57,6 +57,61 @@ export const allWorks = [
     category: "jewelry",
     featured: "true"
   },
+  {
+    id: 4,
+    title: "Japanese Triangular Necklace",
+    shortDescription: "A playful piece, works great with v-cut dresses",
+    description: "While it was originally created to be pendantless, stones or spikes can be added for greater styling.",
+    images: [
+      "https://lh3.googleusercontent.com/d/1RrznwdLGH_AOGi1NxC5LLUveil64Rhk-",
+      "https://lh3.googleusercontent.com/d/11rJMLOhuOoODyLRLO3TmI5boXBrkKrvj"
+    ],
+    details: {
+      materials: "Stainless Steel",
+      dimensions: "Begins at35cm, adjustable length",
+      weight: "82 grams",
+      weaveType: "Japanese 8 in 2 variation",
+      yearCreated: "2005"
+    },
+    category: "jewelry",
+    featured: "true"
+  },
+  {
+    id: 5,
+    title: "The Dice Bag",
+    shortDescription: "Multi-use belt pouch. Stuff it with whatever you want, carry it where ever you go",
+    description: "Lined with black velvet to keep your dice protected and scratchless, this pouch can be used in a utility belt to hold any objects you desire. Coins, dice, glasses, a beverage can or bottle, your imagination is the limit. The interior lining can be changed with suede, soft leather, or almosst any other fabric.",
+    images: [
+      "https://lh3.googleusercontent.com/d/1X5BCicjr6ACqOYOvab1ieA5OmTd-Mdh9"
+    ],
+    details: {
+      materials: "Stainless Steel, Velvet",
+      dimensions: "500cm3",
+      weight: "125 grams",
+      weaveType: "European 4 in 1",
+      yearCreated: "2004"
+    },
+    category: "jewelry",
+    featured: "true"
+  },
+  {
+    id: 6,
+    title: "Ipod Protective Sleeve",
+    shortDescription: "The ultimate Ipod protector",
+    description: "Firstly made with the original Ipod sleeve, it was later produced with black velvet. This protective case is almost rigid, fits perfectly and lasts forever.",
+    images: [
+      "https://lh3.googleusercontent.com/d/1F2MthwoFerorvFieOFm4JfLTl5opsGRs"
+    ],
+    details: {
+      materials: "Stainless Steel",
+      dimensions: "59 x 112 x 7.9 mm",
+      weight: "150 grams",
+      weaveType: "European 6 in 1",
+      yearCreated: "2004"
+    },
+    category: "jewelry",
+    featured: "true"
+  },
   // Add more items as needed
 ];
 
