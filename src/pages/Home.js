@@ -12,11 +12,9 @@ const Home = () => {
         <div className="hero-overlay"></div>
         <img 
           src={heroImage}
-          alt="The Chain Lair" 
+          alt="The Chain Lair"
           className="hero-image"
-          loading="eager" 
-          width="720" 
-          height="640"
+          loading="eager"
         />
         <Container className="hero-content text-center py-5">
           <h1>The Chain Lair<br/>Chainmaille Artistry, Wearables, Lamps and More...</h1>
