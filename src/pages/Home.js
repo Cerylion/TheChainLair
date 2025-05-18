@@ -2,7 +2,7 @@ import React from 'react';
 import { Container, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import FeaturedWorks from '../components/FeaturedWorks';
-import heroImage from '../public/images/TheChainLair.webp';
+import heroImage from '../../public/images/TheChainLair.webp';
 
 const Home = () => {
   return (
