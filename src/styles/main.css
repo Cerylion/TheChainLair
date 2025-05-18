@@ -1,6 +1,6 @@
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://lh3.googleusercontent.com/d/1rBAyn68zhDOjzAjtmE5qFOoX1RZ6EpSk');
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/public/images/TheChainLair.jpg');
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
