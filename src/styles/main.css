@@ -100,8 +100,11 @@
 /* Image protection styles */
 .protected-image {
   user-select: none;
-  pointer-events: none;
   position: relative;
+}
+
+.protected-image img {
+  pointer-events: none;
 }
 
 .image-watermark {
@@ -148,8 +151,10 @@
 
 /* Override bootstrap carousel controls to ensure they're above the zoom container */
 .carousel-control-prev,
-.carousel-control-next {
-  z-index: 5;
+.carousel-control-next,
+.product-thumbnails {
+  z-index: 2;
+  pointer-events: auto;
 }
 
 /* Ensure the carousel images have consistent height */
