@@ -39,6 +39,9 @@ const Pong = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
+    // We'll set up the gamepad polling interval after defining the pollGamepad function
+    let gamepadPollingInterval;
+    
     // Game constants - Define the size of game elements
     const paddleHeight = 100;  // Height of both paddles
     const paddleWidth = 10;    // Width of both paddles
@@ -246,6 +249,9 @@ const Pong = () => {
         // Get the latest gamepad state
         const gamepad = navigator.getGamepads()[gamepadIndex];
         if (gamepad) {
+          // Set input source to gamepad when any gamepad is connected
+          inputSource = 'gamepad';
+          
           // Check south button (A on Xbox, X on PlayStation)
           const southButtonPressed = gamepad.buttons[0].pressed;
           
@@ -253,11 +259,15 @@ const Pong = () => {
           if (southButtonPressed) {
             // Debounce button press (prevent multiple triggers)
             if (!lastSouthButtonStateRef.current) {
+              console.log("South button pressed, current state:", gameStateRef.current);
               if (gameStateRef.current === 'start') {
+                console.log("Starting game from gamepad");
                 updateGameState('playing');
               } else if (gameStateRef.current === 'playing') {
+                console.log("Pausing game from gamepad");
                 updateGameState('paused');
               } else if (gameStateRef.current === 'paused') {
+                console.log("Unpausing game from gamepad");
                 updateGameState('playing');
               }
             }
@@ -276,8 +286,9 @@ const Pong = () => {
           // Check if there's active gamepad input for movement
           const hasGamepadInput = dpadUp || dpadDown || Math.abs(leftStickY) > 0.2;
           
-          // Start game with any directional input
-          if (hasGamepadInput && gameStateRef.current === 'start') {
+          // Start game with any directional input or south button
+          if (gameStateRef.current === 'start' && (hasGamepadInput || southButtonPressed)) {
+            console.log("Starting game from gamepad input");
             updateGameState('playing');
           }
           
@@ -318,9 +329,6 @@ const Pong = () => {
      * Handles paddle movement, ball movement, collisions, and scoring
      */
     const updateGame = () => {
-      // Poll gamepad for input
-      pollGamepad();
-      
       // Move player paddle based on input (keyboard or gamepad)
       if (upPressed && player1Y > 0) {
         player1Y -= 7;  // Move paddle up if not at top edge
@@ -483,10 +491,14 @@ const Pong = () => {
     // Start the game by initiating the game loop
     gameLoop();
     
+    // Set up gamepad polling interval after pollGamepad is defined
+    gamepadPollingInterval = setInterval(pollGamepad, 16); // ~60fps
+    
     // Cleanup event listeners when component unmounts to prevent memory leaks
     return () => {
       document.removeEventListener('keydown', keyDownHandler);
       document.removeEventListener('keyup', keyUpHandler);
+      clearInterval(gamepadPollingInterval); // Clean up the gamepad polling interval
     };
   }, [gamepadConnected]); // Add gamepadConnected as a dependency
   
