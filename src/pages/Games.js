@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 const Games = () => {
@@ -28,7 +28,7 @@ const Games = () => {
                 A new exciting game is being developed. Stay tuned!
               </Card.Text>
               <div className="mt-auto">
-                <Button variant="secondary" disabled>Coming Soon</Button>
+                <span className="btn btn-secondary disabled">Coming Soon</span>
               </div>
             </Card.Body>
           </Card>
@@ -41,7 +41,7 @@ const Games = () => {
                 Another amazing game is in the works. Check back later!
               </Card.Text>
               <div className="mt-auto">
-                <Button variant="secondary" disabled>Coming Soon</Button>
+                <span className="btn btn-secondary disabled">Coming Soon</span>
               </div>
             </Card.Body>
           </Card>
