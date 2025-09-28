@@ -21,7 +21,7 @@ const Pong = () => {
   // Game state management (start, playing, paused)
   const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'paused'
   // Track gamepad button states to prevent multiple triggers
-  let lastSouthButtonState = false;
+  const lastSouthButtonStateRef = useRef(false);
   // Audio references for game sounds
   const paddleHitSound = useRef(new Audio(PADDLE_HIT_SOUND));
   const scoreSound = useRef(new Audio(SCORE_SOUND));
@@ -244,7 +244,7 @@ const Pong = () => {
           // Handle game state changes with south button
           if (southButtonPressed) {
             // Debounce button press (prevent multiple triggers)
-            if (!lastSouthButtonState) {
+            if (!lastSouthButtonStateRef.current) {
               if (gameState === 'start') {
                 setGameState('playing');
               } else if (gameState === 'playing') {
@@ -253,9 +253,9 @@ const Pong = () => {
                 setGameState('playing');
               }
             }
-            lastSouthButtonState = true;
+            lastSouthButtonStateRef.current = true;
           } else {
-            lastSouthButtonState = false;
+            lastSouthButtonStateRef.current = false;
           }
           
           // Check left analog stick (vertical axis)
