@@ -309,9 +309,6 @@ const Pong = () => {
         // Get the latest gamepad state
         const gamepad = navigator.getGamepads()[gamepadIndex];
         if (gamepad) {
-          // Only set input source to gamepad when actively using it
-          // Don't override keyboard input source automatically
-          
           // Check south button (A on Xbox, X on PlayStation)
           const southButtonPressed = gamepad.buttons[0].pressed;
           
@@ -321,7 +318,6 @@ const Pong = () => {
           // Handle exit with east button (only in pause state)
           if (eastButtonPressed) {
             if (!lastEastButtonStateRef.current && gameStateRef.current === 'paused') {
-              console.log("East button pressed while paused, exiting game");
               cleanupGame();
             }
             lastEastButtonStateRef.current = true;
@@ -331,21 +327,16 @@ const Pong = () => {
           
           // Handle game state changes with south button
           if (southButtonPressed) {
-            // Set input source to gamepad when buttons are used
-            inputSource.current = 'gamepad';
-            
-            // Debounce button press (prevent multiple triggers)
+            // Only set input source to gamepad when buttons are actively used
             if (!lastSouthButtonStateRef.current) {
-              console.log("South button pressed, current state:", gameStateRef.current);
               if (gameStateRef.current === 'start') {
-                console.log("Starting game from gamepad");
                 updateGameState('playing');
+                inputSource.current = 'gamepad';
               } else if (gameStateRef.current === 'playing') {
-                console.log("Pausing game from gamepad");
                 updateGameState('paused');
               } else if (gameStateRef.current === 'paused') {
-                console.log("Unpausing game from gamepad");
                 updateGameState('playing');
+                inputSource.current = 'gamepad';
               }
             }
             lastSouthButtonStateRef.current = true;
