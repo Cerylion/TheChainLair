@@ -200,18 +200,25 @@ const Pong = () => {
           const dpadUp = gamepad.buttons[12].pressed;
           const dpadDown = gamepad.buttons[13].pressed;
           
-          // Set control flags based on gamepad input
-          // Use a small deadzone for the analog stick to prevent drift
-          if (leftStickY < -0.2 || dpadUp) {
-            upPressed = true;
-            downPressed = false;
-          } else if (leftStickY > 0.2 || dpadDown) {
-            upPressed = false;
-            downPressed = true;
-          } else if (!keyboardActive()) {
-            // Only reset if keyboard isn't being used
-            upPressed = false;
-            downPressed = false;
+          // Store previous state to detect changes
+          const wasUpPressed = upPressed;
+          const wasDownPressed = downPressed;
+          
+          // Reset gamepad controls first - this ensures they don't stick
+          if (!dpadUp && !dpadDown && Math.abs(leftStickY) < 0.2) {
+            // If no gamepad input is detected, reset the flags
+            // but only if they were set by gamepad previously
+            if (wasUpPressed && !keyboardActive()) upPressed = false;
+            if (wasDownPressed && !keyboardActive()) downPressed = false;
+          } else {
+            // Set control flags based on gamepad input
+            if (leftStickY < -0.2 || dpadUp) {
+              upPressed = true;
+              downPressed = false;
+            } else if (leftStickY > 0.2 || dpadDown) {
+              upPressed = false;
+              downPressed = true;
+            }
           }
         }
       }
