@@ -2,16 +2,18 @@
  * Pong Game Component
  * 
  * This component implements a classic Pong game using HTML5 Canvas and React.
- * The player controls the left paddle using arrow keys, while the right paddle
+ * The player controls the left paddle using arrow keys or gamepad, while the right paddle
  * is controlled by a computer AI.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 const Pong = () => {
   // Reference to the canvas element for drawing the game
   const canvasRef = useRef(null);
+  // State to track if a gamepad is connected
+  const [gamepadConnected, setGamepadConnected] = useState(false);
   
   useEffect(() => {
     // Canvas setup - Get the canvas element and its 2D rendering context
@@ -41,9 +43,58 @@ const Pong = () => {
     let upPressed = false;    // Is up arrow key pressed?
     let downPressed = false;  // Is down arrow key pressed?
     
+    // Gamepad reference and state
+    let gamepads = {};
+    let gamepadIndex = null;
+    
     // Computer AI difficulty (0-1)
     // Higher values make the computer more responsive and harder to beat
     const computerDifficulty = 0.85;
+    
+    /**
+     * Handle gamepad connection event
+     * @param {GamepadEvent} e - The gamepad connection event
+     */
+    const gamepadConnectHandler = (e) => {
+      console.log("Gamepad connected:", e.gamepad.id);
+      gamepads[e.gamepad.index] = e.gamepad;
+      gamepadIndex = e.gamepad.index;
+      setGamepadConnected(true);
+    };
+    
+    /**
+     * Handle gamepad disconnection event
+     * @param {GamepadEvent} e - The gamepad disconnection event
+     */
+    const gamepadDisconnectHandler = (e) => {
+      console.log("Gamepad disconnected:", e.gamepad.id);
+      delete gamepads[e.gamepad.index];
+      if (gamepadIndex === e.gamepad.index) {
+        gamepadIndex = null;
+      }
+      setGamepadConnected(false);
+    };
+    
+    // Add gamepad event listeners
+    window.addEventListener("gamepadconnected", gamepadConnectHandler);
+    window.addEventListener("gamepaddisconnected", gamepadDisconnectHandler);
+    
+    // Check if a gamepad is already connected
+    const checkGamepads = () => {
+      const connectedGamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+      for (let i = 0; i < connectedGamepads.length; i++) {
+        if (connectedGamepads[i]) {
+          gamepads[connectedGamepads[i].index] = connectedGamepads[i];
+          gamepadIndex = connectedGamepads[i].index;
+          setGamepadConnected(true);
+          console.log("Found existing gamepad:", connectedGamepads[i].id);
+          break;
+        }
+      }
+    };
+    
+    // Check for already connected gamepads
+    checkGamepads();
     
     // Event listeners for paddle control
     /**
@@ -133,13 +184,59 @@ const Pong = () => {
       }
     };
     
+    /**
+     * Polls the gamepad for input
+     * Updates control flags based on gamepad buttons and axes
+     */
+    const pollGamepad = () => {
+      if (gamepadIndex !== null) {
+        // Get the latest gamepad state
+        const gamepad = navigator.getGamepads()[gamepadIndex];
+        if (gamepad) {
+          // Check left analog stick (vertical axis)
+          const leftStickY = gamepad.axes[1]; // Y-axis of left stick
+          
+          // Check D-pad up/down buttons
+          const dpadUp = gamepad.buttons[12].pressed;
+          const dpadDown = gamepad.buttons[13].pressed;
+          
+          // Set control flags based on gamepad input
+          // Use a small deadzone for the analog stick to prevent drift
+          if (leftStickY < -0.2 || dpadUp) {
+            upPressed = true;
+            downPressed = false;
+          } else if (leftStickY > 0.2 || dpadDown) {
+            upPressed = false;
+            downPressed = true;
+          } else if (!keyboardActive()) {
+            // Only reset if keyboard isn't being used
+            upPressed = false;
+            downPressed = false;
+          }
+        }
+      }
+    };
+    
+    /**
+     * Checks if keyboard controls are active
+     * @returns {boolean} True if any keyboard controls are active
+     */
+    const keyboardActive = () => {
+      return document.activeElement === document.body && 
+             (document.querySelector(':focus') === null || 
+              document.querySelector(':focus') === document.body);
+    };
+    
     // Game logic
     /**
      * Updates the game state for each frame
      * Handles paddle movement, ball movement, collisions, and scoring
      */
     const updateGame = () => {
-      // Move player paddle based on keyboard input
+      // Poll gamepad for input
+      pollGamepad();
+      
+      // Move player paddle based on input (keyboard or gamepad)
       if (upPressed && player1Y > 0) {
         player1Y -= 7;  // Move paddle up if not at top edge
       } else if (downPressed && player1Y < canvas.height - paddleHeight) {
@@ -236,7 +333,14 @@ const Pong = () => {
   return (
     <Container className="py-5 text-center">
       <h1 className="mb-4">Pong</h1>
-      <p className="mb-4">Use the up and down arrow keys to control your paddle (left side).</p>
+      <p className="mb-4">
+        Use the up and down arrow keys to control your paddle (left side).
+        {gamepadConnected && (
+          <span className="ms-2 badge bg-success">
+            Gamepad Connected! Use D-pad or left stick
+          </span>
+        )}
+      </p>
       <div className="d-flex justify-content-center mb-4">
         <canvas 
           ref={canvasRef} 
