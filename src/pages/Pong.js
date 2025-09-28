@@ -153,11 +153,16 @@ const Pong = () => {
         return;
       }
       
-      // Exit game with Escape key
+      // Exit game with Escape key (only in pause state)
       if (e.key === 'Escape') {
         e.preventDefault();
-        // Clean up game resources and exit
-        cleanupGame();
+        if (gameStateRef.current === 'paused') {
+          // Clean up game resources and exit
+          cleanupGame();
+        } else if (gameStateRef.current === 'playing') {
+          // Just pause the game if playing
+          updateGameState('paused');
+        }
         return;
       }
       
@@ -306,8 +311,8 @@ const Pong = () => {
         // Get the latest gamepad state
         const gamepad = navigator.getGamepads()[gamepadIndex];
         if (gamepad) {
-          // Set input source to gamepad when gamepad is connected
-  inputSource.current = 'gamepad';
+          // Only set input source to gamepad when actively using it
+          // Don't override keyboard input source automatically
           
           // Check south button (A on Xbox, X on PlayStation)
           const southButtonPressed = gamepad.buttons[0].pressed;
@@ -315,10 +320,10 @@ const Pong = () => {
           // Check east button (B on Xbox, Circle on PlayStation) for exit
           const eastButtonPressed = gamepad.buttons[1].pressed;
           
-          // Handle exit with east button
+          // Handle exit with east button (only in pause state)
           if (eastButtonPressed) {
-            if (!lastEastButtonStateRef.current) {
-              console.log("East button pressed, exiting game");
+            if (!lastEastButtonStateRef.current && gameStateRef.current === 'paused') {
+              console.log("East button pressed while paused, exiting game");
               cleanupGame();
             }
             lastEastButtonStateRef.current = true;
