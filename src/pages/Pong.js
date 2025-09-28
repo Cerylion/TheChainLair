@@ -18,6 +18,10 @@ const Pong = () => {
   const canvasRef = useRef(null);
   // State to track if a gamepad is connected
   const [gamepadConnected, setGamepadConnected] = useState(false);
+  // Game state management (start, playing, paused)
+  const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'paused'
+  // Track gamepad button states to prevent multiple triggers
+  let lastSouthButtonState = false;
   // Audio references for game sounds
   const paddleHitSound = useRef(new Audio(PADDLE_HIT_SOUND));
   const scoreSound = useRef(new Audio(SCORE_SOUND));
@@ -105,12 +109,34 @@ const Pong = () => {
     
     // Event listeners for paddle control
     /**
-     * Handle key press events for paddle movement
-     * Sets the appropriate direction flag when arrow keys are pressed
+     * Handle key press events for paddle movement and game control
      * @param {KeyboardEvent} e - The keyboard event
      */
     const keyDownHandler = (e) => {
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      // Game state controls
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        
+        // Toggle between start/playing or playing/paused states
+        if (gameState === 'start') {
+          setGameState('playing');
+        } else if (gameState === 'playing') {
+          setGameState('paused');
+        } else if (gameState === 'paused') {
+          setGameState('playing');
+        }
+        return;
+      }
+      
+      // Start game with arrow keys
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameState === 'start') {
+        e.preventDefault();
+        setGameState('playing');
+        return;
+      }
+      
+      // Paddle movement controls (only when playing)
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameState === 'playing') {
         // Prevent default browser scrolling behavior
         e.preventDefault();
         
@@ -212,6 +238,26 @@ const Pong = () => {
         // Get the latest gamepad state
         const gamepad = navigator.getGamepads()[gamepadIndex];
         if (gamepad) {
+          // Check south button (A on Xbox, X on PlayStation)
+          const southButtonPressed = gamepad.buttons[0].pressed;
+          
+          // Handle game state changes with south button
+          if (southButtonPressed) {
+            // Debounce button press (prevent multiple triggers)
+            if (!lastSouthButtonState) {
+              if (gameState === 'start') {
+                setGameState('playing');
+              } else if (gameState === 'playing') {
+                setGameState('paused');
+              } else if (gameState === 'paused') {
+                setGameState('playing');
+              }
+            }
+            lastSouthButtonState = true;
+          } else {
+            lastSouthButtonState = false;
+          }
+          
           // Check left analog stick (vertical axis)
           const leftStickY = gamepad.axes[1]; // Y-axis of left stick
           
@@ -219,31 +265,39 @@ const Pong = () => {
           const dpadUp = gamepad.buttons[12].pressed;
           const dpadDown = gamepad.buttons[13].pressed;
           
-          // Check if there's active gamepad input
+          // Check if there's active gamepad input for movement
           const hasGamepadInput = dpadUp || dpadDown || Math.abs(leftStickY) > 0.2;
           
-          // Clear previous gamepad input if we're using gamepad
-          if (inputSource === 'gamepad') {
-            // Only reset if no gamepad input is detected
-            if (!hasGamepadInput) {
-              upPressed = false;
-              downPressed = false;
-              
-              // If no gamepad input, allow switching back to keyboard
-              inputSource = 'none';
-            }
+          // Start game with any directional input
+          if (hasGamepadInput && gameState === 'start') {
+            setGameState('playing');
           }
           
-          // Set new gamepad input if any buttons are pressed
-          if (hasGamepadInput) {
-            inputSource = 'gamepad';
-            
-            if (leftStickY < -0.2 || dpadUp) {
-              upPressed = true;
+          // Only process movement controls when in playing state
+          if (gameState === 'playing') {
+            // Clear previous gamepad input if we're using gamepad
+            if (inputSource === 'gamepad') {
+              // Only reset if no gamepad input is detected
+              if (!hasGamepadInput) {
+                upPressed = false;
+                downPressed = false;
+                
+                // If no gamepad input, allow switching back to keyboard
+                inputSource = 'none';
+              }
             }
             
-            if (leftStickY > 0.2 || dpadDown) {
-              downPressed = true;
+            // Set new gamepad input if any buttons are pressed
+            if (hasGamepadInput) {
+              inputSource = 'gamepad';
+              
+              if (leftStickY < -0.2 || dpadUp) {
+                upPressed = true;
+              }
+              
+              if (leftStickY > 0.2 || dpadDown) {
+                downPressed = true;
+              }
             }
           }
         }
@@ -344,23 +398,80 @@ const Pong = () => {
     };
     
     /**
+     * Draws the start screen with instructions
+     */
+    const drawStartScreen = () => {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw title
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '48px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('PONG', canvas.width / 2, canvas.height / 3);
+      
+      // Draw start instruction
+      ctx.font = '24px Arial';
+      ctx.fillText('Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / 2);
+      
+      // Draw gamepad instruction if connected
+      if (gamepadConnected) {
+        ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / 2 + 40);
+      }
+    };
+    
+    /**
+     * Draws the pause screen
+     */
+    const drawPauseScreen = () => {
+      // Semi-transparent overlay
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Pause text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '36px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+      
+      // Resume instruction
+      ctx.font = '20px Arial';
+      ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 40);
+    };
+    
+    /**
      * Main game loop that runs every animation frame
      * Clears the canvas, draws all game elements, and updates the game state
      */
     const gameLoop = () => {
-      // Clear canvas with black background
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw game elements
-      drawNet();     // Draw center line
-      drawBall();    // Draw the ball
-      drawPaddle(0, player1Y);  // Draw player paddle (left)
-      drawPaddle(canvas.width - paddleWidth, player2Y);  // Draw computer paddle (right)
-      drawScore();   // Draw current score
-      
-      // Update game state for next frame
-      updateGame();
+      // Handle different game states
+      if (gameState === 'start') {
+        drawStartScreen();
+      } else if (gameState === 'playing') {
+        // Clear canvas with black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw game elements
+        drawNet();     // Draw center line
+        drawBall();    // Draw the ball
+        drawPaddle(0, player1Y);  // Draw player paddle (left)
+        drawPaddle(canvas.width - paddleWidth, player2Y);  // Draw computer paddle (right)
+        drawScore();   // Draw current score
+        
+        // Update game state for next frame
+        updateGame();
+      } else if (gameState === 'paused') {
+        // Draw the game in the background
+        drawNet();
+        drawBall();
+        drawPaddle(0, player1Y);
+        drawPaddle(canvas.width - paddleWidth, player2Y);
+        drawScore();
+        
+        // Draw pause overlay
+        drawPauseScreen();
+      }
       
       // Continue game loop by requesting next animation frame
       requestAnimationFrame(gameLoop);
