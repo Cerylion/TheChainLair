@@ -261,28 +261,35 @@ const Pong = () => {
     // Add a cleanup function to properly shut down the game
     const cleanupGame = () => {
       // Stop the game loop by setting a flag
-  isGameActive.current = false;
+      isGameActive.current = false;
       
       // Stop any audio that might be playing
-  if (paddleHitSound.current) {
-    paddleHitSound.current.pause();
-    paddleHitSound.current.currentTime = 0;
-  }
-  if (scoreSound.current) {
-    scoreSound.current.pause();
-    scoreSound.current.currentTime = 0;
-  }
+      if (paddleHitSound.current) {
+        paddleHitSound.current.pause();
+        paddleHitSound.current.currentTime = 0;
+      }
+      if (scoreSound.current) {
+        scoreSound.current.pause();
+        scoreSound.current.currentTime = 0;
+      }
       
       // Clear intervals and timeouts
       clearInterval(gamepadPollingInterval);
       
+      // Reset game state
+      updateGameState('start');
+      
+      // Reset scores
+      player1Score = 0;
+      player2Score = 0;
+      
       // Use setTimeout to ensure this runs after the current execution context
       setTimeout(() => {
         // Navigate back to games page
-  const goBack = () => {
-    window.history.back();
-  };
-  setTimeout(goBack, 0);
+        const goBack = () => {
+          window.history.back();
+        };
+        setTimeout(goBack, 0);
       }, 0);
     };
     
@@ -556,7 +563,7 @@ const Pong = () => {
       }
       
       // Continue game loop by requesting next animation frame
-      if (isGameActive) {
+      if (isGameActive.current) {
         requestAnimationFrame(gameLoop);
       }
     };
