@@ -108,9 +108,8 @@ const Pong = () => {
       setGamepadConnected(false);
     };
     
-    // Add gamepad event listeners
-    window.addEventListener("gamepadconnected", gamepadConnectHandler);
-    window.addEventListener("gamepaddisconnected", gamepadDisconnectHandler);
+    // Add gamepad event listeners inside useEffect for proper cleanup
+    // (These will be moved to useEffect)
     
     // Check if a gamepad is already connected
     const checkGamepads = () => {
@@ -126,8 +125,7 @@ const Pong = () => {
       }
     };
     
-    // Check for already connected gamepads
-    checkGamepads();
+    // Check if a gamepad is already connected (moved to useEffect)
     
     // Event listeners for paddle control
     /**
@@ -205,9 +203,7 @@ const Pong = () => {
       }
     };
     
-    // Add event listeners to detect player input
-    document.addEventListener('keydown', keyDownHandler);
-    document.addEventListener('keyup', keyUpHandler);
+    // Event listeners will be added in useEffect for proper cleanup
     
     // Draw functions
     /**
@@ -362,25 +358,25 @@ const Pong = () => {
           
           // Only process movement controls when playing
           if (gameStateRef.current === 'playing') {
-            // Set input source to gamepad when there's gamepad input
+            // Only set input source to gamepad when there's actual gamepad movement
+            // Don't override keyboard input unless gamepad is actively being used
             if (hasGamepadInput) {
               inputSource.current = 'gamepad';
-            }
-            
-            // Update control flags based on gamepad input
-            if (dpadUp || leftStickY < -0.2) {
-              upPressed = true;
-              downPressed = false;
-            } else if (dpadDown || leftStickY > 0.2) {
-              downPressed = true;
-              upPressed = false;
-            } else {
-              // Reset flags when no directional input
-              if (inputSource.current === 'gamepad') {
+              
+              // Update control flags based on gamepad input
+              if (dpadUp || leftStickY < -0.2) {
+                upPressed = true;
+                downPressed = false;
+              } else if (dpadDown || leftStickY > 0.2) {
+                downPressed = true;
+                upPressed = false;
+              } else {
+                // Reset flags when no directional input
                 upPressed = false;
                 downPressed = false;
               }
             }
+            // Don't reset keyboard flags when gamepad is not being used
           }
         }
       }
@@ -565,6 +561,15 @@ const Pong = () => {
       }
     };
     
+    // Add event listeners for keyboard and gamepad
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
+    window.addEventListener("gamepadconnected", gamepadConnectHandler);
+    window.addEventListener("gamepaddisconnected", gamepadDisconnectHandler);
+    
+    // Check for already connected gamepads
+    checkGamepads();
+    
     // Start the game by initiating the game loop
     gameLoop();
     
@@ -580,6 +585,8 @@ const Pong = () => {
       // Remove event listeners
       document.removeEventListener('keydown', keyDownHandler);
       document.removeEventListener('keyup', keyUpHandler);
+      window.removeEventListener("gamepadconnected", gamepadConnectHandler);
+      window.removeEventListener("gamepaddisconnected", gamepadDisconnectHandler);
       
       // Clear intervals
       clearInterval(gamepadPollingInterval);
@@ -594,7 +601,7 @@ const Pong = () => {
         scoreSound.current.currentTime = 0;
       }
     };
-  }, [gamepadConnected]); // Add gamepadConnected as a dependency
+  }, []); // Remove gamepadConnected dependency to prevent re-initialization
   
   return (
     <Container className="py-5 text-center">
