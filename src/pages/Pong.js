@@ -277,34 +277,29 @@ const Pong = () => {
           const hasGamepadInput = dpadUp || dpadDown || Math.abs(leftStickY) > 0.2;
           
           // Start game with any directional input
-          if (hasGamepadInput && gameState === 'start') {
-            setGameState('playing');
+          if (hasGamepadInput && gameStateRef.current === 'start') {
+            updateGameState('playing');
           }
           
-          // Only process movement controls when in playing state
-          if (gameState === 'playing') {
-            // Clear previous gamepad input if we're using gamepad
-            if (inputSource === 'gamepad') {
-              // Only reset if no gamepad input is detected
-              if (!hasGamepadInput) {
-                upPressed = false;
-                downPressed = false;
-                
-                // If no gamepad input, allow switching back to keyboard
-                inputSource = 'none';
-              }
-            }
-            
-            // Set new gamepad input if any buttons are pressed
+          // Only process movement controls when playing
+          if (gameStateRef.current === 'playing') {
+            // Set input source to gamepad when there's gamepad input
             if (hasGamepadInput) {
               inputSource = 'gamepad';
-              
-              if (leftStickY < -0.2 || dpadUp) {
-                upPressed = true;
-              }
-              
-              if (leftStickY > 0.2 || dpadDown) {
-                downPressed = true;
+            }
+            
+            // Update control flags based on gamepad input
+            if (dpadUp || leftStickY < -0.2) {
+              upPressed = true;
+              downPressed = false;
+            } else if (dpadDown || leftStickY > 0.2) {
+              downPressed = true;
+              upPressed = false;
+            } else {
+              // Reset flags when no directional input
+              if (inputSource === 'gamepad') {
+                upPressed = false;
+                downPressed = false;
               }
             }
           }
@@ -493,7 +488,7 @@ const Pong = () => {
       document.removeEventListener('keydown', keyDownHandler);
       document.removeEventListener('keyup', keyUpHandler);
     };
-  }, []);
+  }, [gamepadConnected]); // Add gamepadConnected as a dependency
   
   return (
     <Container className="py-5 text-center">
