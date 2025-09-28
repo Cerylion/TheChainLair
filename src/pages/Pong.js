@@ -9,11 +9,18 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
+// Sound effect URLs
+const PADDLE_HIT_SOUND = `${process.env.PUBLIC_URL}/sounds/bip.mp3`;
+const SCORE_SOUND = `${process.env.PUBLIC_URL}/sounds/score.mp3`;
+
 const Pong = () => {
   // Reference to the canvas element for drawing the game
   const canvasRef = useRef(null);
   // State to track if a gamepad is connected
   const [gamepadConnected, setGamepadConnected] = useState(false);
+  // Audio references for game sounds
+  const paddleHitSound = useRef(new Audio(PADDLE_HIT_SOUND));
+  const scoreSound = useRef(new Audio(SCORE_SOUND));
   
   useEffect(() => {
     // Canvas setup - Get the canvas element and its 2D rendering context
@@ -287,6 +294,10 @@ const Pong = () => {
         // Change vertical speed based on where ball hits paddle (adds spin effect)
         const deltaY = ballY - (player1Y + paddleHeight / 2);
         ballSpeedY = deltaY * 0.35;
+        
+        // Play paddle hit sound
+        paddleHitSound.current.currentTime = 0;
+        paddleHitSound.current.play();
       }
       
       // Ball collision with computer paddle (right)
@@ -295,14 +306,28 @@ const Pong = () => {
         // Change vertical speed based on where ball hits paddle (adds spin effect)
         const deltaY = ballY - (player2Y + paddleHeight / 2);
         ballSpeedY = deltaY * 0.35;
+        
+        // Play paddle hit sound
+        paddleHitSound.current.currentTime = 0;
+        paddleHitSound.current.play();
       }
       
       // Score points when ball passes paddles
       if (ballX < 0) {
         player2Score++;  // Computer scores a point
+        
+        // Play score sound
+        scoreSound.current.currentTime = 0;
+        scoreSound.current.play();
+        
         resetBall();     // Reset ball position
       } else if (ballX > canvas.width) {
         player1Score++;  // Player scores a point
+        
+        // Play score sound
+        scoreSound.current.currentTime = 0;
+        scoreSound.current.play();
+        
         resetBall();     // Reset ball position
       }
     };
