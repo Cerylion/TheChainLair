@@ -184,6 +184,9 @@ const Pong = () => {
       }
     };
     
+    // Track input source to handle gamepad and keyboard separately
+    let inputSource = 'none'; // 'keyboard', 'gamepad', or 'none'
+    
     /**
      * Polls the gamepad for input
      * Updates control flags based on gamepad buttons and axes
@@ -200,23 +203,21 @@ const Pong = () => {
           const dpadUp = gamepad.buttons[12].pressed;
           const dpadDown = gamepad.buttons[13].pressed;
           
-          // Store previous state to detect changes
-          const wasUpPressed = upPressed;
-          const wasDownPressed = downPressed;
+          // Clear previous gamepad input
+          if (inputSource === 'gamepad') {
+            upPressed = false;
+            downPressed = false;
+          }
           
-          // Reset gamepad controls first - this ensures they don't stick
-          if (!dpadUp && !dpadDown && Math.abs(leftStickY) < 0.2) {
-            // If no gamepad input is detected, reset the flags
-            // but only if they were set by gamepad previously
-            if (wasUpPressed && !keyboardActive()) upPressed = false;
-            if (wasDownPressed && !keyboardActive()) downPressed = false;
-          } else {
-            // Set control flags based on gamepad input
+          // Set new gamepad input if any buttons are pressed
+          if (dpadUp || dpadDown || Math.abs(leftStickY) > 0.2) {
+            inputSource = 'gamepad';
+            
             if (leftStickY < -0.2 || dpadUp) {
               upPressed = true;
-              downPressed = false;
-            } else if (leftStickY > 0.2 || dpadDown) {
-              upPressed = false;
+            }
+            
+            if (leftStickY > 0.2 || dpadDown) {
               downPressed = true;
             }
           }
