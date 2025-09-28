@@ -19,8 +19,21 @@ const Pong = () => {
   // State to track if a gamepad is connected
   const [gamepadConnected, setGamepadConnected] = useState(false);
   // Game state management (start, playing, paused)
-  const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'paused'
+  const [_, setGameState] = useState('start'); // 'start', 'playing', 'paused'
   const gameStateRef = useRef('start'); // Ref to track current game state for immediate access
+  
+  // Track input source and game active state
+  const inputSource = useRef('keyboard'); // 'keyboard' or 'gamepad'
+  const isGameActive = useRef(true);
+  
+  // Audio references for game sounds
+  const paddleHitSound = useRef(null);
+  const scoreSound = useRef(null);
+  
+  // Track gamepad button states to prevent multiple triggers
+  const lastSouthButtonStateRef = useRef(false);
+  const lastEastButtonStateRef = useRef(false);
+
   
   // Custom state setter that updates both state and ref
   const updateGameState = (newState) => {
@@ -28,13 +41,11 @@ const Pong = () => {
     setGameState(newState);
   };
   
-  // Track gamepad button states to prevent multiple triggers
-  const lastSouthButtonStateRef = useRef(false);
-  // Audio references for game sounds
-  const paddleHitSound = useRef(new Audio(PADDLE_HIT_SOUND));
-  const scoreSound = useRef(new Audio(SCORE_SOUND));
-  
   useEffect(() => {
+    // Audio initialization
+    paddleHitSound.current = new Audio(PADDLE_HIT_SOUND);
+    scoreSound.current = new Audio(SCORE_SOUND);
+    
     // Canvas setup - Get the canvas element and its 2D rendering context
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -124,6 +135,9 @@ const Pong = () => {
      * @param {KeyboardEvent} e - The keyboard event
      */
     const keyDownHandler = (e) => {
+      // Set input source to keyboard when keyboard is used
+  inputSource.current = 'keyboard';
+      
       // Game state controls
       if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
@@ -136,6 +150,14 @@ const Pong = () => {
         } else if (gameStateRef.current === 'paused') {
           updateGameState('playing');
         }
+        return;
+      }
+      
+      // Exit game with Escape key
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        // Clean up game resources and exit
+        cleanupGame();
         return;
       }
       
@@ -152,7 +174,7 @@ const Pong = () => {
         e.preventDefault();
         
         // Set input source to keyboard
-        inputSource = 'keyboard';
+        inputSource.current = 'keyboard';
         
         if (e.key === 'ArrowUp') {
           upPressed = true;  // Mark up arrow as pressed
@@ -170,7 +192,7 @@ const Pong = () => {
     const keyUpHandler = (e) => {
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         // Only handle keyboard events if keyboard is the current input source
-        if (inputSource === 'keyboard') {
+        if (inputSource.current === 'keyboard') {
           if (e.key === 'ArrowUp') {
             upPressed = false;  // Mark up arrow as released
           } else if (e.key === 'ArrowDown') {
@@ -236,8 +258,36 @@ const Pong = () => {
       }
     };
     
-    // Track input source to handle gamepad and keyboard separately
-    let inputSource = 'none'; // 'keyboard', 'gamepad', or 'none'
+    // Add a cleanup function to properly shut down the game
+    const cleanupGame = () => {
+      // Stop the game loop by setting a flag
+  isGameActive.current = false;
+      
+      // Stop any audio that might be playing
+  if (paddleHitSound.current) {
+    paddleHitSound.current.pause();
+    paddleHitSound.current.currentTime = 0;
+  }
+  if (scoreSound.current) {
+    scoreSound.current.pause();
+    scoreSound.current.currentTime = 0;
+  }
+      
+      // Clear intervals and timeouts
+      clearInterval(gamepadPollingInterval);
+      
+      // Use setTimeout to ensure this runs after the current execution context
+      setTimeout(() => {
+        // Navigate back to games page
+  const goBack = () => {
+    window.history.back();
+  };
+  setTimeout(goBack, 0);
+      }, 0);
+    };
+    
+    // Use the refs defined at component level
+    // No need to redefine variables here
     
     /**
      * Polls the gamepad for input
@@ -249,11 +299,25 @@ const Pong = () => {
         // Get the latest gamepad state
         const gamepad = navigator.getGamepads()[gamepadIndex];
         if (gamepad) {
-          // Set input source to gamepad when any gamepad is connected
-          inputSource = 'gamepad';
+          // Set input source to gamepad when gamepad is connected
+  inputSource.current = 'gamepad';
           
           // Check south button (A on Xbox, X on PlayStation)
           const southButtonPressed = gamepad.buttons[0].pressed;
+          
+          // Check east button (B on Xbox, Circle on PlayStation) for exit
+          const eastButtonPressed = gamepad.buttons[1].pressed;
+          
+          // Handle exit with east button
+          if (eastButtonPressed) {
+            if (!lastEastButtonStateRef.current) {
+              console.log("East button pressed, exiting game");
+              cleanupGame();
+            }
+            lastEastButtonStateRef.current = true;
+          } else {
+            lastEastButtonStateRef.current = false;
+          }
           
           // Handle game state changes with south button
           if (southButtonPressed) {
@@ -296,7 +360,7 @@ const Pong = () => {
           if (gameStateRef.current === 'playing') {
             // Set input source to gamepad when there's gamepad input
             if (hasGamepadInput) {
-              inputSource = 'gamepad';
+              inputSource.current = 'gamepad';
             }
             
             // Update control flags based on gamepad input
@@ -308,7 +372,7 @@ const Pong = () => {
               upPressed = false;
             } else {
               // Reset flags when no directional input
-              if (inputSource === 'gamepad') {
+              if (inputSource.current === 'gamepad') {
                 upPressed = false;
                 downPressed = false;
               }
@@ -361,8 +425,8 @@ const Pong = () => {
         ballSpeedY = deltaY * 0.35;
         
         // Play paddle hit sound
-        paddleHitSound.current.currentTime = 0;
-        paddleHitSound.current.play();
+  paddleHitSound.current.currentTime = 0;
+  paddleHitSound.current.play();
       }
       
       // Ball collision with computer paddle (right)
@@ -382,8 +446,8 @@ const Pong = () => {
         player2Score++;  // Computer scores a point
         
         // Play score sound
-        scoreSound.current.currentTime = 0;
-        scoreSound.current.play();
+  scoreSound.current.currentTime = 0;
+  scoreSound.current.play();
         
         resetBall();     // Reset ball position
       } else if (ballX > canvas.width) {
@@ -443,11 +507,18 @@ const Pong = () => {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = '36px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 30);
       
-      // Resume instruction
+      // Resume instruction based on input source
       ctx.font = '20px Arial';
-      ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 40);
+      if (inputSource.current === 'gamepad') {
+        ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + 20);
+      } else {
+        ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 20);
+      }
+      
+      // Exit instruction
+      ctx.fillText('Press ESC or B Button to Exit', canvas.width / 2, canvas.height / 2 + 60);
     };
     
     /**
@@ -485,7 +556,9 @@ const Pong = () => {
       }
       
       // Continue game loop by requesting next animation frame
-      requestAnimationFrame(gameLoop);
+      if (isGameActive) {
+        requestAnimationFrame(gameLoop);
+      }
     };
     
     // Start the game by initiating the game loop
@@ -496,9 +569,26 @@ const Pong = () => {
     
     // Cleanup event listeners when component unmounts to prevent memory leaks
     return () => {
+      console.log("Component unmounting - cleaning up resources");
+      // Set flag to stop the game loop
+      isGameActive.current = false;
+      
+      // Remove event listeners
       document.removeEventListener('keydown', keyDownHandler);
       document.removeEventListener('keyup', keyUpHandler);
-      clearInterval(gamepadPollingInterval); // Clean up the gamepad polling interval
+      
+      // Clear intervals
+      clearInterval(gamepadPollingInterval);
+      
+      // Stop any audio that might be playing
+      if (paddleHitSound.current) {
+        paddleHitSound.current.pause();
+        paddleHitSound.current.currentTime = 0;
+      }
+      if (scoreSound.current) {
+        scoreSound.current.pause();
+        scoreSound.current.currentTime = 0;
+      }
     };
   }, [gamepadConnected]); // Add gamepadConnected as a dependency
   
