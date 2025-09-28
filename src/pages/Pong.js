@@ -52,10 +52,15 @@ const Pong = () => {
      * @param {KeyboardEvent} e - The keyboard event
      */
     const keyDownHandler = (e) => {
-      if (e.key === 'ArrowUp') {
-        upPressed = true;  // Mark up arrow as pressed
-      } else if (e.key === 'ArrowDown') {
-        downPressed = true;  // Mark down arrow as pressed
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        // Prevent default browser scrolling behavior
+        e.preventDefault();
+        
+        if (e.key === 'ArrowUp') {
+          upPressed = true;  // Mark up arrow as pressed
+        } else if (e.key === 'ArrowDown') {
+          downPressed = true;  // Mark down arrow as pressed
+        }
       }
     };
     
