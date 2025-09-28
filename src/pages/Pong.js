@@ -20,6 +20,14 @@ const Pong = () => {
   const [gamepadConnected, setGamepadConnected] = useState(false);
   // Game state management (start, playing, paused)
   const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'paused'
+  const gameStateRef = useRef('start'); // Ref to track current game state for immediate access
+  
+  // Custom state setter that updates both state and ref
+  const updateGameState = (newState) => {
+    gameStateRef.current = newState;
+    setGameState(newState);
+  };
+  
   // Track gamepad button states to prevent multiple triggers
   const lastSouthButtonStateRef = useRef(false);
   // Audio references for game sounds
@@ -118,25 +126,25 @@ const Pong = () => {
         e.preventDefault();
         
         // Toggle between start/playing or playing/paused states
-        if (gameState === 'start') {
-          setGameState('playing');
-        } else if (gameState === 'playing') {
-          setGameState('paused');
-        } else if (gameState === 'paused') {
-          setGameState('playing');
+        if (gameStateRef.current === 'start') {
+          updateGameState('playing');
+        } else if (gameStateRef.current === 'playing') {
+          updateGameState('paused');
+        } else if (gameStateRef.current === 'paused') {
+          updateGameState('playing');
         }
         return;
       }
       
       // Start game with arrow keys
-      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameState === 'start') {
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameStateRef.current === 'start') {
         e.preventDefault();
-        setGameState('playing');
+        updateGameState('playing');
         return;
       }
       
       // Paddle movement controls (only when playing)
-      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameState === 'playing') {
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameStateRef.current === 'playing') {
         // Prevent default browser scrolling behavior
         e.preventDefault();
         
@@ -245,12 +253,12 @@ const Pong = () => {
           if (southButtonPressed) {
             // Debounce button press (prevent multiple triggers)
             if (!lastSouthButtonStateRef.current) {
-              if (gameState === 'start') {
-                setGameState('playing');
-              } else if (gameState === 'playing') {
-                setGameState('paused');
-              } else if (gameState === 'paused') {
-                setGameState('playing');
+              if (gameStateRef.current === 'start') {
+                updateGameState('playing');
+              } else if (gameStateRef.current === 'playing') {
+                updateGameState('paused');
+              } else if (gameStateRef.current === 'paused') {
+                updateGameState('playing');
               }
             }
             lastSouthButtonStateRef.current = true;
@@ -408,7 +416,7 @@ const Pong = () => {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = '48px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('PONG', canvas.width / 2, canvas.height / 3);
+      ctx.fillText('JavaScript PONG', canvas.width / 2, canvas.height / 3);
       
       // Draw start instruction
       ctx.font = '24px Arial';
@@ -445,9 +453,9 @@ const Pong = () => {
      */
     const gameLoop = () => {
       // Handle different game states
-      if (gameState === 'start') {
+      if (gameStateRef.current === 'start') {
         drawStartScreen();
-      } else if (gameState === 'playing') {
+      } else if (gameStateRef.current === 'playing') {
         // Clear canvas with black background
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -461,7 +469,7 @@ const Pong = () => {
         
         // Update game state for next frame
         updateGame();
-      } else if (gameState === 'paused') {
+      } else if (gameStateRef.current === 'paused') {
         // Draw the game in the background
         drawNet();
         drawBall();
