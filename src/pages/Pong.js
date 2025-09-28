@@ -107,6 +107,9 @@ const Pong = () => {
         // Prevent default browser scrolling behavior
         e.preventDefault();
         
+        // Set input source to keyboard
+        inputSource = 'keyboard';
+        
         if (e.key === 'ArrowUp') {
           upPressed = true;  // Mark up arrow as pressed
         } else if (e.key === 'ArrowDown') {
@@ -121,10 +124,15 @@ const Pong = () => {
      * @param {KeyboardEvent} e - The keyboard event
      */
     const keyUpHandler = (e) => {
-      if (e.key === 'ArrowUp') {
-        upPressed = false;  // Mark up arrow as released
-      } else if (e.key === 'ArrowDown') {
-        downPressed = false;  // Mark down arrow as released
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        // Only handle keyboard events if keyboard is the current input source
+        if (inputSource === 'keyboard') {
+          if (e.key === 'ArrowUp') {
+            upPressed = false;  // Mark up arrow as released
+          } else if (e.key === 'ArrowDown') {
+            downPressed = false;  // Mark down arrow as released
+          }
+        }
       }
     };
     
@@ -190,6 +198,7 @@ const Pong = () => {
     /**
      * Polls the gamepad for input
      * Updates control flags based on gamepad buttons and axes
+     * Allows switching between gamepad and keyboard input
      */
     const pollGamepad = () => {
       if (gamepadIndex !== null) {
@@ -203,14 +212,23 @@ const Pong = () => {
           const dpadUp = gamepad.buttons[12].pressed;
           const dpadDown = gamepad.buttons[13].pressed;
           
-          // Clear previous gamepad input
+          // Check if there's active gamepad input
+          const hasGamepadInput = dpadUp || dpadDown || Math.abs(leftStickY) > 0.2;
+          
+          // Clear previous gamepad input if we're using gamepad
           if (inputSource === 'gamepad') {
-            upPressed = false;
-            downPressed = false;
+            // Only reset if no gamepad input is detected
+            if (!hasGamepadInput) {
+              upPressed = false;
+              downPressed = false;
+              
+              // If no gamepad input, allow switching back to keyboard
+              inputSource = 'none';
+            }
           }
           
           // Set new gamepad input if any buttons are pressed
-          if (dpadUp || dpadDown || Math.abs(leftStickY) > 0.2) {
+          if (hasGamepadInput) {
             inputSource = 'gamepad';
             
             if (leftStickY < -0.2 || dpadUp) {
@@ -229,12 +247,7 @@ const Pong = () => {
      * Checks if keyboard controls are active
      * @returns {boolean} True if any keyboard controls are active
      */
-    const keyboardActive = () => {
-      return document.activeElement === document.body && 
-             (document.querySelector(':focus') === null || 
-              document.querySelector(':focus') === document.body);
-    };
-    
+
     // Game logic
     /**
      * Updates the game state for each frame
