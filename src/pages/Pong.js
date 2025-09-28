@@ -375,6 +375,12 @@ const Pong = () => {
                 upPressed = false;
                 downPressed = false;
               }
+            } else {
+              // Reset gamepad flags when no gamepad input is detected
+              if (inputSource.current === 'gamepad') {
+                upPressed = false;
+                downPressed = false;
+              }
             }
             // Don't reset keyboard flags when gamepad is not being used
           }
