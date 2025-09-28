@@ -12,6 +12,8 @@ import About from './pages/About';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import ProductDetail from './pages/ProductDetail';
+import Games from './pages/Games';
+import Pong from './pages/Pong';
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/games" element={<Games />} />
+            <Route path="/games/pong" element={<Pong />} />
           </Routes>
         </main>
         <Footer />
