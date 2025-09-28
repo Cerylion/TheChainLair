@@ -153,16 +153,14 @@ const Pong = () => {
         return;
       }
       
-      // Exit game with Escape key (only in pause state)
+      // Escape key only works in pause state to exit
       if (e.key === 'Escape') {
         e.preventDefault();
         if (gameStateRef.current === 'paused') {
           // Clean up game resources and exit
           cleanupGame();
-        } else if (gameStateRef.current === 'playing') {
-          // Just pause the game if playing
-          updateGameState('paused');
         }
+        // No action for Escape in other states
         return;
       }
       
@@ -333,6 +331,9 @@ const Pong = () => {
           
           // Handle game state changes with south button
           if (southButtonPressed) {
+            // Set input source to gamepad when buttons are used
+            inputSource.current = 'gamepad';
+            
             // Debounce button press (prevent multiple triggers)
             if (!lastSouthButtonStateRef.current) {
               console.log("South button pressed, current state:", gameStateRef.current);
