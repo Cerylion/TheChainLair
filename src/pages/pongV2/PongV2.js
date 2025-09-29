@@ -184,6 +184,19 @@ const isPointInBounds = (point, bounds) => {
          point.y <= bounds.y + bounds.height;
 };
 
+// Constrain paddle position within game boundaries
+const constrainPaddle = (paddleY, frameOffset, gameHeight, paddleHeight) => {
+  const minY = frameOffset;
+  const maxY = frameOffset + gameHeight - paddleHeight;
+  
+  if (paddleY < minY) {
+    return minY;
+  } else if (paddleY > maxY) {
+    return maxY;
+  }
+  return paddleY;
+};
+
 const Pong = () => {
   const navigate = useNavigate();
   const canvasRef = useRef(null);
@@ -431,13 +444,7 @@ const Pong = () => {
         const minY = frameOffset;
         const maxY = frameOffset + gameHeight - paddleHeight;
         
-        if (newPaddleY >= minY && newPaddleY <= maxY) {
-          player1Y = newPaddleY;
-        } else if (newPaddleY < minY) {
-          player1Y = minY;
-        } else if (newPaddleY > maxY) {
-          player1Y = maxY;
-        }
+        player1Y = constrainPaddle(newPaddleY, frameOffset, gameHeight, paddleHeight);
         
         touchStartY.current = touchY;
       }
@@ -670,11 +677,13 @@ const Pong = () => {
 
     const updateGame = () => {
       // Move player paddle
-      if (upPressed && player1Y > frameOffset) {
-        player1Y -= 7;
-      } else if (downPressed && player1Y < frameOffset + gameHeight - paddleHeight) {
-        player1Y += 7;
+      let newPlayer1Y = player1Y;
+      if (upPressed) {
+        newPlayer1Y -= 7;
+      } else if (downPressed) {
+        newPlayer1Y += 7;
       }
+      player1Y = constrainPaddle(newPlayer1Y, frameOffset, gameHeight, paddleHeight);
       
       // Computer AI
       const computerTargetY = ballY - (paddleHeight / 2);
@@ -685,11 +694,7 @@ const Pong = () => {
       }
       
       // Constrain computer paddle
-      if (player2Y < frameOffset) {
-        player2Y = frameOffset;
-      } else if (player2Y > frameOffset + gameHeight - paddleHeight) {
-        player2Y = frameOffset + gameHeight - paddleHeight;
-      }
+      player2Y = constrainPaddle(player2Y, frameOffset, gameHeight, paddleHeight);
       
       // Ball movement
       ballX += ballSpeedX;
