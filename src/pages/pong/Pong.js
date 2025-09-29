@@ -34,6 +34,10 @@ const Pong = () => {
   const touchStartY = useRef(null);
   const isDragging = useRef(false);
   
+  // Double-tap detection for fullscreen
+  const lastTapTime = useRef(0);
+  const doubleTapDelay = 300; // milliseconds
+  
   // Audio references for game sounds
   const paddleHitSound = useRef(null);
   const scoreSound = useRef(null);
@@ -243,6 +247,23 @@ const Pong = () => {
        
        // Set input source to touch
        inputSource.current = 'touch';
+       
+       // Double-tap detection for fullscreen
+       const currentTime = Date.now();
+       const timeDiff = currentTime - lastTapTime.current;
+       
+       if (timeDiff < doubleTapDelay) {
+         // Double-tap detected - toggle fullscreen
+         if (document.fullscreenElement) {
+           document.exitFullscreen();
+         } else {
+           document.documentElement.requestFullscreen();
+         }
+         lastTapTime.current = 0; // Reset to prevent triple-tap issues
+         return;
+       }
+       
+       lastTapTime.current = currentTime;
        
        // Check if touch is on exit button when paused
        if (gameStateRef.current === 'paused') {
@@ -612,13 +633,21 @@ const Pong = () => {
       ctx.textAlign = 'center';
       ctx.fillText('JavaScript PONG', canvas.width / 2, canvas.height / 3);
       
-      // Draw start instruction
+      // Draw start instruction based on input source
       ctx.font = '24px Arial';
-      ctx.fillText('Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / 2);
       
-      // Draw gamepad instruction if connected
-      if (gamepadConnected) {
-        ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / 2 + 40);
+      if (inputSource.current === 'touch') {
+        ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / 2);
+        ctx.font = '18px Arial';
+        ctx.fillText('Drag to move paddle • Tap to pause', canvas.width / 2, canvas.height / 2 + 40);
+        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 70);
+      } else {
+        ctx.fillText('Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / 2);
+        
+        // Draw gamepad instruction if connected
+        if (gamepadConnected) {
+          ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / 2 + 40);
+        }
       }
     };
     
@@ -642,13 +671,16 @@ const Pong = () => {
         ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + 20);
       } else if (inputSource.current === 'touch') {
         ctx.fillText('Tap to Resume', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.font = '16px Arial';
+        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
       } else {
         ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 20);
       }
       
       // Exit instruction
       if (inputSource.current === 'touch') {
-        ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + 60);
+        ctx.font = '20px Arial';
+        ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + 80);
       } else {
         ctx.fillText('Press ESC or B Button to Exit', canvas.width / 2, canvas.height / 2 + 60);
       }
