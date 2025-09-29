@@ -280,7 +280,9 @@ const Pong = () => {
       
       if (gameStateRef.current === 'playing' && isDragging.current) {
         const deltaY = touchY - touchStartY.current;
-        const newPaddleY = player1Y + deltaY;
+        const sensitivityMultiplier = 2.5; // Increased sensitivity for better responsiveness
+        const adjustedDeltaY = deltaY * sensitivityMultiplier;
+        const newPaddleY = player1Y + adjustedDeltaY;
         
         const minY = frameOffset;
         const maxY = frameOffset + gameHeight - paddleHeight;
