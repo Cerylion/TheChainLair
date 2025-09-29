@@ -197,6 +197,14 @@ const constrainPaddle = (paddleY, frameOffset, gameHeight, paddleHeight) => {
   return paddleY;
 };
 
+// Utility function for consistent text rendering
+const drawText = (ctx, text, x, y, fontSize, color = '#FFFFFF', align = 'center') => {
+  ctx.fillStyle = color;
+  ctx.font = `${fontSize}px Arial`;
+  ctx.textAlign = align;
+  ctx.fillText(text, x, y);
+};
+
 const Pong = () => {
   const navigate = useNavigate();
   const canvasRef = useRef(null);
@@ -492,12 +500,8 @@ const Pong = () => {
     };
     
     const drawScore = () => {
-      ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
-      ctx.font = `${GAME_CONFIG.UI.SCORE.FONT_SIZE}px Arial`;
-      ctx.textAlign = 'center';
-      
-      ctx.fillText(player1Score, frameOffset + gameWidth / 4, GAME_CONFIG.UI.SCORE.Y_POSITION);
-      ctx.fillText(player2Score, frameOffset + (3 * gameWidth) / 4, GAME_CONFIG.UI.SCORE.Y_POSITION);
+      drawText(ctx, player1Score, frameOffset + gameWidth / 4, GAME_CONFIG.UI.SCORE.Y_POSITION, GAME_CONFIG.UI.SCORE.FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
+      drawText(ctx, player2Score, frameOffset + (3 * gameWidth) / 4, GAME_CONFIG.UI.SCORE.Y_POSITION, GAME_CONFIG.UI.SCORE.FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
     };
 
     const drawPauseButton = () => {
@@ -811,33 +815,26 @@ const Pong = () => {
       ctx.fillStyle = GAME_CONFIG.COLORS.BACKGROUND;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
-      ctx.font = `${GAME_CONFIG.UI.START_SCREEN.TITLE_FONT_SIZE}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText('React Pong', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.TITLE_Y_OFFSET);
-      
-      ctx.font = `${GAME_CONFIG.UI.START_SCREEN.SUBTITLE_FONT_SIZE}px Arial`;
+      drawText(ctx, 'React Pong', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.TITLE_Y_OFFSET, GAME_CONFIG.UI.START_SCREEN.TITLE_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
       
       if (inputSource.current === 'touch') {
-        ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET);
+        drawText(ctx, 'Tap to Start', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET, GAME_CONFIG.UI.START_SCREEN.SUBTITLE_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
         
-        ctx.font = `${GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
-        ctx.fillText('Drag to move paddle • Tap to pause', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING);
-        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 2);
+        drawText(ctx, 'Drag to move paddle • Tap to pause', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING, GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
+        drawText(ctx, 'Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 2, GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
         
       } else {
-        ctx.fillText('Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET);
+        drawText(ctx, 'Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET, GAME_CONFIG.UI.START_SCREEN.SUBTITLE_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
         
         if (gamepadConnected) {
-          ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING);
+          drawText(ctx, 'or Press A Button on Gamepad', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING, GAME_CONFIG.UI.START_SCREEN.SUBTITLE_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
         }
         
-        ctx.font = `${GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
         const yOffset = gamepadConnected ? GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 2 : GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING;
-        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + yOffset);
+        drawText(ctx, 'Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + yOffset, GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
         
         if (gamepadConnected) {
-          ctx.fillText('or Press Y Button for fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 3);
+          drawText(ctx, 'or Press Y Button for fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 3, GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE, GAME_CONFIG.COLORS.FOREGROUND);
         }
       }
     };
@@ -846,43 +843,32 @@ const Pong = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.TITLE_FONT_SIZE}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.TITLE_Y_OFFSET);
-      
-      ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
+      drawText(ctx, 'PAUSED', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.TITLE_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.TITLE_FONT_SIZE, '#FFFFFF');
       
       if (inputSource.current === 'gamepad') {
-        ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET);
+        drawText(ctx, 'Press A Button to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
         
-        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
-        ctx.fillText('Press Y Button to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET);
+        drawText(ctx, 'Press Y Button to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE, '#FFFFFF');
         
       } else if (inputSource.current === 'touch') {
-        ctx.fillText('Tap to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET);
+        drawText(ctx, 'Tap to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
         
-        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
-        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET);
+        drawText(ctx, 'Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE, '#FFFFFF');
         
       } else {
-        ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET);
+        drawText(ctx, 'Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
         
-        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
-        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET);
+        drawText(ctx, 'Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE, '#FFFFFF');
       }
       
       if (inputSource.current === 'touch') {
-        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
-        ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET);
+        drawText(ctx, 'Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
         
       } else if (inputSource.current === 'gamepad') {
-        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
-        ctx.fillText('Press B Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET);
+        drawText(ctx, 'Press B Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
         
       } else {
-        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
-        ctx.fillText('Press ESC to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET);
+        drawText(ctx, 'Press ESC to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
       }
       
       // Mobile exit button
@@ -899,10 +885,7 @@ const Pong = () => {
         ctx.lineWidth = GAME_CONFIG.UI.LINE_WIDTH;
         ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('EXIT', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 6);
+        drawText(ctx, 'EXIT', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 6, 16, GAME_CONFIG.COLORS.FOREGROUND);
       }
     };
     

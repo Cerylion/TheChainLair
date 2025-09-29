@@ -200,15 +200,26 @@ const constrainPaddle = (paddleY, frameOffset, gameHeight, paddleHeight) => {
 The utility function provides consistent boundary checking across all paddle interactions, improving code maintainability and reducing duplication by 18+ lines of repetitive constraint logic.
 
 ### 5. Text Rendering Patterns
-**Location**: Multiple locations in draw functions
+~~**Location**: Multiple locations in draw functions~~
 ```javascript
-// Repeated pattern:
+// ✅ COMPLETED - Old repetitive pattern:
 ctx.fillStyle = '#FFFFFF';
 ctx.font = 'XXpx Arial';
 ctx.textAlign = 'center';
 ctx.fillText(text, x, y);
 ```
-**Recommendation**: Create `drawText(text, x, y, fontSize, color, align)` utility function.
+~~**Recommendation**: Create `drawText(text, x, y, fontSize, color, align)` utility function.~~
+
+**STATUS**: ✅ **COMPLETED** - `drawText` utility function implemented and applied throughout codebase
+
+**Implementation Details**:
+- Created `drawText(ctx, text, x, y, fontSize, color, align = 'center')` utility function
+- Replaced repetitive text rendering patterns in:
+  - Score rendering (2 instances)
+  - Start screen text (4 instances) 
+  - Pause screen text (3 instances)
+  - Exit button text (1 instance)
+- **Impact**: Eliminated 30+ lines of repetitive text rendering code, improved consistency and maintainability
 
 ## Code Simplification Opportunities
 
