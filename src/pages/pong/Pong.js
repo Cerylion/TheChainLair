@@ -676,24 +676,30 @@ const Pong = () => {
         const newFullscreenState = !prev;
         
         if (newFullscreenState) {
-          // Calculate scale factor to fit screen with border
-          const borderWidth = 26; // Total border width (8 + 8 + 10 = 26px)
-          const availableWidth = window.innerWidth - borderWidth * 2;
-          const availableHeight = window.innerHeight - borderWidth * 2;
+          // Get viewport dimensions (use visualViewport for mobile if available)
+          const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+          const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+          
+          // Add some padding to prevent edge clipping (smaller on mobile)
+          const padding = isMobile ? 10 : 20;
+          const availableWidth = viewportWidth - padding * 2;
+          const availableHeight = viewportHeight - padding * 2;
           
           // Calculate scale based on original canvas size
           const scaleX = availableWidth / canvas.width;
           const scaleY = availableHeight / canvas.height;
           const scale = Math.min(scaleX, scaleY); // Use smaller scale to maintain aspect ratio
           
+          // Ensure minimum scale of 1.0 to prevent shrinking
+          const finalScale = Math.max(scale, 1.0);
+          
           // Apply fullscreen styles with scale transform
           canvas.style.position = 'fixed';
           canvas.style.top = '50%';
           canvas.style.left = '50%';
-          canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+          canvas.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
           canvas.style.zIndex = '9999';
-          
-
+          canvas.style.maxWidth = 'none'; // Override the maxWidth constraint
           
           // Hide body overflow and all other page elements
           document.body.style.overflow = 'hidden';
@@ -721,6 +727,7 @@ const Pong = () => {
           canvas.style.left = '';
           canvas.style.transform = '';
           canvas.style.zIndex = '';
+          canvas.style.maxWidth = ''; // Reset maxWidth
           
           // Restore body overflow
           document.body.style.overflow = '';
