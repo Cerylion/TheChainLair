@@ -680,14 +680,15 @@ const Pong = () => {
           // Hide all elements except the canvas by adding a fullscreen class to body
           document.body.classList.add('pong-fullscreen');
           
-          // Create and inject CSS to hide all elements except the canvas
+          // Create and inject CSS to hide all elements except the canvas and frame overlay
           const fullscreenStyle = document.createElement('style');
           fullscreenStyle.id = 'pong-fullscreen-style';
           fullscreenStyle.textContent = `
-            body.pong-fullscreen > *:not(canvas) {
+            body.pong-fullscreen > *:not(canvas):not(#pong-frame-overlay) {
               visibility: hidden !important;
             }
-            body.pong-fullscreen canvas {
+            body.pong-fullscreen canvas,
+            body.pong-fullscreen #pong-frame-overlay {
               visibility: visible !important;
             }
           `;
