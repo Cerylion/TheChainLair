@@ -270,7 +270,13 @@ const Pong = () => {
       
       const touch = e.touches[0];
       const rect = canvas.getBoundingClientRect();
-      const touchY = touch.clientY - rect.top;
+      let touchY = touch.clientY - rect.top;
+      
+      // Apply coordinate transformation for mobile scaling
+      if (!isFullscreenMode) {
+        const scaleY = rect.height / canvas.height;
+        touchY = touchY / scaleY;
+      }
       
       const moveThreshold = 3;
       
