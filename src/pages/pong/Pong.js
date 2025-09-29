@@ -221,12 +221,10 @@ const Pong = () => {
       
       // Pause button interaction (playing state only)
       if (gameStateRef.current === 'playing') {
-        const buttonSize = 60; // Match the new button size
-        const buttonX = frameOffset + gameWidth - buttonSize - 15;
-        const buttonY = 15; // Updated to match new position outside frame
+        const buttonBounds = getPauseButtonBounds();
         
-        if (touchX >= buttonX && touchX <= buttonX + buttonSize &&
-            touchY >= buttonY && touchY <= buttonY + buttonSize) {
+        if (touchX >= buttonBounds.x && touchX <= buttonBounds.x + buttonBounds.width &&
+            touchY >= buttonBounds.y && touchY <= buttonBounds.y + buttonBounds.height) {
           updateGameState('paused');
           return;
         }
@@ -301,6 +299,21 @@ const Pong = () => {
       downPressed = false;
     };
     
+    // Helper function to calculate pause button position
+    const getPauseButtonBounds = () => {
+      const buttonSize = 60;
+      const buttonX = frameOffset + gameWidth - buttonSize - 15;
+      const buttonY = 75 - buttonSize / 2; // Align with scores vertically, centered on score baseline
+      
+      return {
+        x: buttonX,
+        y: buttonY,
+        size: buttonSize,
+        width: buttonSize,
+        height: buttonSize
+      };
+    };
+    
     const drawBall = () => {
       ctx.beginPath();
       ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
@@ -329,23 +342,20 @@ const Pong = () => {
     const drawPauseButton = () => {
       if (inputSource.current !== 'touch' || gameStateRef.current !== 'playing') return;
       
-      const buttonSize = 60;
-      // Position outside game frame like scores - in top right corner
-      const buttonX = frameOffset + gameWidth - buttonSize - 15;
-      const buttonY = 15; // Keep consistent 15px margin from top
+      const buttonBounds = getPauseButtonBounds();
       const cornerRadius = 12;
       
       // Draw rounded rectangle background
       ctx.beginPath();
-      ctx.moveTo(buttonX + cornerRadius, buttonY);
-      ctx.lineTo(buttonX + buttonSize - cornerRadius, buttonY);
-      ctx.quadraticCurveTo(buttonX + buttonSize, buttonY, buttonX + buttonSize, buttonY + cornerRadius);
-      ctx.lineTo(buttonX + buttonSize, buttonY + buttonSize - cornerRadius);
-      ctx.quadraticCurveTo(buttonX + buttonSize, buttonY + buttonSize, buttonX + buttonSize - cornerRadius, buttonY + buttonSize);
-      ctx.lineTo(buttonX + cornerRadius, buttonY + buttonSize);
-      ctx.quadraticCurveTo(buttonX, buttonY + buttonSize, buttonX, buttonY + buttonSize - cornerRadius);
-      ctx.lineTo(buttonX, buttonY + cornerRadius);
-      ctx.quadraticCurveTo(buttonX, buttonY, buttonX + cornerRadius, buttonY);
+      ctx.moveTo(buttonBounds.x + cornerRadius, buttonBounds.y);
+      ctx.lineTo(buttonBounds.x + buttonBounds.width - cornerRadius, buttonBounds.y);
+      ctx.quadraticCurveTo(buttonBounds.x + buttonBounds.width, buttonBounds.y, buttonBounds.x + buttonBounds.width, buttonBounds.y + cornerRadius);
+      ctx.lineTo(buttonBounds.x + buttonBounds.width, buttonBounds.y + buttonBounds.height - cornerRadius);
+      ctx.quadraticCurveTo(buttonBounds.x + buttonBounds.width, buttonBounds.y + buttonBounds.height, buttonBounds.x + buttonBounds.width - cornerRadius, buttonBounds.y + buttonBounds.height);
+      ctx.lineTo(buttonBounds.x + cornerRadius, buttonBounds.y + buttonBounds.height);
+      ctx.quadraticCurveTo(buttonBounds.x, buttonBounds.y + buttonBounds.height, buttonBounds.x, buttonBounds.y + buttonBounds.height - cornerRadius);
+      ctx.lineTo(buttonBounds.x, buttonBounds.y + cornerRadius);
+      ctx.quadraticCurveTo(buttonBounds.x, buttonBounds.y, buttonBounds.x + cornerRadius, buttonBounds.y);
       ctx.closePath();
       
       // Button background (semi-transparent)
@@ -362,8 +372,8 @@ const Pong = () => {
       const barWidth = 8;
       const barHeight = 28;
       const barSpacing = 10;
-      const startX = buttonX + (buttonSize - (2 * barWidth + barSpacing)) / 2;
-      const startY = buttonY + (buttonSize - barHeight) / 2;
+      const startX = buttonBounds.x + (buttonBounds.width - (2 * barWidth + barSpacing)) / 2;
+      const startY = buttonBounds.y + (buttonBounds.height - barHeight) / 2;
       
       // Left bar with rounded edges
       ctx.beginPath();
