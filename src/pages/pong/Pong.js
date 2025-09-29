@@ -319,7 +319,7 @@ const Pong = () => {
     const getPauseButtonBounds = () => {
       const buttonSize = 60;
       const buttonX = frameOffset + gameWidth - buttonSize - 15;
-      const buttonY = 75 - buttonSize / 2; // Align with scores vertically, centered on score baseline
+      const buttonY = 75 - 48 + 5; // Align with top of score text (75 - font height + small offset)
       
       return {
         x: buttonX,
