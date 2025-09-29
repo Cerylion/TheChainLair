@@ -40,7 +40,6 @@ const Pong = () => {
   
   // Fullscreen mode state
   const [isFullscreenMode, setIsFullscreenMode] = useState(false);
-  const originalCanvasSize = useRef({ width: 800, height: 400 });
   
   // Audio references for game sounds
   const paddleHitSound = useRef(null);
@@ -631,61 +630,35 @@ const Pong = () => {
     };
     
     /**
-     * Toggles custom fullscreen mode
+     * Toggles custom fullscreen mode using CSS transform scale
      */
     const toggleFullscreenMode = () => {
       setIsFullscreenMode(prev => {
         const newFullscreenState = !prev;
         
         if (newFullscreenState) {
-          // Store original canvas size
-          originalCanvasSize.current = { width: canvas.width, height: canvas.height };
-          
-          // Calculate new canvas size to fit screen with border
+          // Calculate scale factor to fit screen with border
           const borderWidth = 15; // Total border width (3 layers of 5px each)
           const availableWidth = window.innerWidth - borderWidth * 2;
           const availableHeight = window.innerHeight - borderWidth * 2;
           
-          // Maintain aspect ratio (2:1)
-          const aspectRatio = 2;
-          let newWidth, newHeight;
+          // Calculate scale based on original canvas size
+          const scaleX = availableWidth / canvas.width;
+          const scaleY = availableHeight / canvas.height;
+          const scale = Math.min(scaleX, scaleY); // Use smaller scale to maintain aspect ratio
           
-          if (availableWidth / availableHeight > aspectRatio) {
-            // Height is the limiting factor
-            newHeight = availableHeight;
-            newWidth = newHeight * aspectRatio;
-          } else {
-            // Width is the limiting factor
-            newWidth = availableWidth;
-            newHeight = newWidth / aspectRatio;
-          }
-          
-          // Update canvas size
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-          
-          // Update canvas style to center it
+          // Apply fullscreen styles with scale transform
           canvas.style.position = 'fixed';
           canvas.style.top = '50%';
           canvas.style.left = '50%';
-          canvas.style.transform = 'translate(-50%, -50%)';
+          canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
           canvas.style.zIndex = '9999';
           
           // Hide body overflow
           document.body.style.overflow = 'hidden';
           
-          // Reset ball and paddle positions for new canvas size
-          ballX = canvas.width / 2;
-          ballY = canvas.height / 2;
-          player1Y = (canvas.height - paddleHeight) / 2;
-          player2Y = (canvas.height - paddleHeight) / 2;
-          
         } else {
-          // Restore original canvas size
-          canvas.width = originalCanvasSize.current.width;
-          canvas.height = originalCanvasSize.current.height;
-          
-          // Reset canvas style
+          // Reset canvas style to original
           canvas.style.position = '';
           canvas.style.top = '';
           canvas.style.left = '';
@@ -694,12 +667,6 @@ const Pong = () => {
           
           // Restore body overflow
           document.body.style.overflow = '';
-          
-          // Reset ball and paddle positions for original canvas size
-          ballX = canvas.width / 2;
-          ballY = canvas.height / 2;
-          player1Y = (canvas.height - paddleHeight) / 2;
-          player2Y = (canvas.height - paddleHeight) / 2;
         }
         
         return newFullscreenState;
