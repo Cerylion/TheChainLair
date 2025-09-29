@@ -176,6 +176,14 @@ const transformTouchCoordinates = (touch, canvas, isFullscreenMode) => {
   return { touchX, touchY };
 };
 
+// Check if a point is within the bounds of a rectangle
+const isPointInBounds = (point, bounds) => {
+  return point.x >= bounds.x && 
+         point.x <= bounds.x + bounds.width &&
+         point.y >= bounds.y && 
+         point.y <= bounds.y + bounds.height;
+};
+
 const Pong = () => {
   const navigate = useNavigate();
   const canvasRef = useRef(null);
@@ -368,8 +376,7 @@ const Pong = () => {
       if (gameStateRef.current === 'playing') {
         const buttonBounds = getPauseButtonBounds();
         
-        if (touchX >= buttonBounds.x && touchX <= buttonBounds.x + buttonBounds.width &&
-            touchY >= buttonBounds.y && touchY <= buttonBounds.y + buttonBounds.height) {
+        if (isPointInBounds({ x: touchX, y: touchY }, buttonBounds)) {
           updateGameState('paused');
           return;
         }
@@ -377,13 +384,14 @@ const Pong = () => {
       
       // Exit button interaction (pause state only)
       if (gameStateRef.current === 'paused') {
-        const buttonWidth = GAME_CONFIG.UI.EXIT_BUTTON.WIDTH;
-        const buttonHeight = GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT;
-        const buttonX = GAME_CONFIG.UI.EXIT_BUTTON.X;
-        const buttonY = GAME_CONFIG.UI.EXIT_BUTTON.Y;
+        const exitButtonBounds = {
+          x: GAME_CONFIG.UI.EXIT_BUTTON.X,
+          y: GAME_CONFIG.UI.EXIT_BUTTON.Y,
+          width: GAME_CONFIG.UI.EXIT_BUTTON.WIDTH,
+          height: GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT
+        };
         
-        if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
-            touchY >= buttonY && touchY <= buttonY + buttonHeight) {
+        if (isPointInBounds({ x: touchX, y: touchY }, exitButtonBounds)) {
           cleanupGame();
           return;
         }
