@@ -654,25 +654,25 @@ const Pong = () => {
       }
       
       // Draw exit button for mobile devices
-      if (isMobile) {
+      if (inputSource.current === 'touch') {
         // Exit button dimensions and position (top-left corner)
         const buttonWidth = 80;
         const buttonHeight = 40;
         const buttonX = 20;
         const buttonY = 20;
         
-        // Button background
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        // Button background (more visible)
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
         ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        // Button border
+        // Button border (white for contrast)
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        // Button text
-        ctx.fillStyle = '#000000';
-        ctx.font = '18px Arial';
+        // Button text (white for better visibility)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('EXIT', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 6);
       }
