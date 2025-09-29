@@ -654,7 +654,7 @@ const Pong = () => {
           canvas.style.left = '';
           canvas.style.transform = '';
           canvas.style.zIndex = '';
-          canvas.style.maxWidth = '';
+          canvas.style.maxWidth = '100%'; // Restore original mobile scaling
           
           document.body.style.overflow = '';
           document.body.classList.remove('pong-fullscreen');
