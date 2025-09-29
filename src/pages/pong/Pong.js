@@ -45,6 +45,7 @@ const Pong = () => {
   // Track gamepad button states to prevent multiple triggers
   const lastSouthButtonStateRef = useRef(false);
   const lastEastButtonStateRef = useRef(false);
+  const lastNorthButtonStateRef = useRef(false);
 
   // Mobile device detection function
   const detectMobileDevice = () => {
@@ -186,6 +187,17 @@ const Pong = () => {
           cleanupGame();
         }
         // No action for Escape in other states
+        return;
+      }
+      
+      // Enter key toggles fullscreen
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          document.documentElement.requestFullscreen();
+        }
         return;
       }
       
@@ -453,6 +465,23 @@ const Pong = () => {
           // Check east button (B on Xbox, Circle on PlayStation) for exit
           const eastButtonPressed = gamepad.buttons[1].pressed;
           
+          // Check north button (Y on Xbox, Triangle on PlayStation) for fullscreen
+          const northButtonPressed = gamepad.buttons[3].pressed;
+          
+          // Handle fullscreen with north button
+          if (northButtonPressed) {
+            if (!lastNorthButtonStateRef.current) {
+              if (document.fullscreenElement) {
+                document.exitFullscreen();
+              } else {
+                document.documentElement.requestFullscreen();
+              }
+            }
+            lastNorthButtonStateRef.current = true;
+          } else {
+            lastNorthButtonStateRef.current = false;
+          }
+          
           // Handle exit with east button (only in pause state)
           if (eastButtonPressed) {
             if (!lastEastButtonStateRef.current && gameStateRef.current === 'paused') {
@@ -648,6 +677,15 @@ const Pong = () => {
         if (gamepadConnected) {
           ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / 2 + 40);
         }
+        
+        // Draw fullscreen instructions for PC
+        ctx.font = '18px Arial';
+        const yOffset = gamepadConnected ? 70 : 40;
+        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + yOffset);
+        
+        if (gamepadConnected) {
+          ctx.fillText('or Press Y Button for fullscreen', canvas.width / 2, canvas.height / 2 + 100);
+        }
       }
     };
     
@@ -669,20 +707,28 @@ const Pong = () => {
       ctx.font = '20px Arial';
       if (inputSource.current === 'gamepad') {
         ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.font = '16px Arial';
+        ctx.fillText('Press Y Button to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
       } else if (inputSource.current === 'touch') {
         ctx.fillText('Tap to Resume', canvas.width / 2, canvas.height / 2 + 20);
         ctx.font = '16px Arial';
         ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
       } else {
         ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.font = '16px Arial';
+        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
       }
       
       // Exit instruction
       if (inputSource.current === 'touch') {
         ctx.font = '20px Arial';
         ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + 80);
+      } else if (inputSource.current === 'gamepad') {
+        ctx.font = '20px Arial';
+        ctx.fillText('Press B Button to Exit', canvas.width / 2, canvas.height / 2 + 80);
       } else {
-        ctx.fillText('Press ESC or B Button to Exit', canvas.width / 2, canvas.height / 2 + 60);
+        ctx.font = '20px Arial';
+        ctx.fillText('Press ESC to Exit', canvas.width / 2, canvas.height / 2 + 80);
       }
       
       // Draw exit button for mobile devices
