@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Container } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import PADDLE_HIT_SOUND from './assets/sounds/bip.mp3';
 import SCORE_SOUND from './assets/sounds/score.mp3';
@@ -177,6 +177,7 @@ const transformTouchCoordinates = (touch, canvas, isFullscreenMode) => {
 };
 
 const Pong = () => {
+  const navigate = useNavigate();
   const canvasRef = useRef(null);
   const [gamepadConnected, setGamepadConnected] = useState(false);
   const [_, setGameState] = useState('start');
@@ -576,12 +577,8 @@ const Pong = () => {
       player1Score = GAME_CONFIG.GAME.INITIAL_SCORES;
       player2Score = GAME_CONFIG.GAME.INITIAL_SCORES;
       
-      setTimeout(() => {
-        const goBack = () => {
-          window.history.back();
-        };
-        setTimeout(goBack, GAME_CONFIG.GAME.RESET_DELAY);
-      }, GAME_CONFIG.GAME.RESET_DELAY);
+      // Navigate back to games page using React Router
+      navigate('/games');
     };
     
     const pollGamepad = () => {
@@ -1005,23 +1002,25 @@ const Pong = () => {
       window.removeEventListener("gamepadconnected", gamepadConnectHandler);
       window.removeEventListener("gamepaddisconnected", gamepadDisconnectHandler);
       
-      if (mobileDetected) {
-        canvas.removeEventListener('touchstart', touchStartHandler);
-        canvas.removeEventListener('touchmove', touchMoveHandler);
-        canvas.removeEventListener('touchend', touchEndHandler);
+      // Capture canvas reference at cleanup time to avoid initialization errors
+      const currentCanvas = canvasRef.current;
+      
+      if (mobileDetected && currentCanvas) {
+        currentCanvas.removeEventListener('touchstart', touchStartHandler);
+        currentCanvas.removeEventListener('touchmove', touchMoveHandler);
+        currentCanvas.removeEventListener('touchend', touchEndHandler);
       }
       
       clearInterval(gamepadPollingInterval);
       
       // Clean up fullscreen styles when component unmounts
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.style.position = '';
-        canvas.style.top = '';
-        canvas.style.left = '';
-        canvas.style.transform = '';
-        canvas.style.zIndex = '';
-        canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
+      if (currentCanvas) {
+        currentCanvas.style.position = '';
+        currentCanvas.style.top = '';
+        currentCanvas.style.left = '';
+        currentCanvas.style.transform = '';
+        currentCanvas.style.zIndex = '';
+        currentCanvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
       }
       
       document.body.style.overflow = '';

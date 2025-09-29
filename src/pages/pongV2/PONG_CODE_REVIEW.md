@@ -11,6 +11,10 @@
   - Added proper event listeners for `beforeunload` and `popstate` events
   - **Result**: Fullscreen mode now properly cleans up when navigating away, preventing blank screens and missing assets
 
+## New Bug Found - Error when exiting game from pause menu
+- **Description**: When in mobile, when in pause, when clicking the exit button, the screen goes white and nothing happens. there is an uncaught reference error in the console at className (PongV2.js:1009:9)
+
+
 ## Executive Summary
 This document provides a comprehensive analysis of the Pong.js codebase, identifying areas for improvement, code duplication, simplification opportunities, and performance optimizations. The current implementation is functional but contains several areas that could benefit from refactoring.
 
