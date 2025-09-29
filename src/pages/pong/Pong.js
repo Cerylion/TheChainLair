@@ -5,242 +5,415 @@
  * The player controls the left paddle using arrow keys or gamepad, while the right paddle
  * is controlled by a computer AI.
  */
+/**
+ * ========================================
+ * PONG GAME COMPONENT - COMPREHENSIVE GUIDE
+ * ========================================
+ * 
+ * This is a complete implementation of the classic Pong game using React and HTML5 Canvas.
+ * 
+ * GAME FEATURES:
+ * - Single player vs AI computer opponent
+ * - Multiple input methods: Keyboard (arrow keys), Gamepad, Touch (mobile)
+ * - Fullscreen mode support for desktop and mobile
+ * - Sound effects for paddle hits and scoring
+ * - Responsive design that works on all screen sizes
+ * - Mobile-optimized touch controls with drag sensitivity
+ * 
+ * TECHNICAL ARCHITECTURE:
+ * - React functional component with hooks for state management
+ * - HTML5 Canvas for high-performance 2D graphics rendering
+ * - Game loop using requestAnimationFrame for smooth 60fps animation
+ * - Event-driven input handling for keyboard, gamepad, and touch
+ * - Collision detection using bounding box intersection
+ * - AI opponent using simple tracking algorithm with difficulty scaling
+ * 
+ * CODE STRUCTURE:
+ * 1. Component setup and state initialization
+ * 2. Utility functions (mobile detection, state management)
+ * 3. Game initialization and canvas setup
+ * 4. Input event handlers (keyboard, gamepad, touch)
+ * 5. Game logic (physics, collision detection, AI)
+ * 6. Rendering functions (drawing game objects and UI)
+ * 7. Game loop and lifecycle management
+ * 8. Component cleanup and event listener removal
+ */
 import React, { useEffect, useRef, useState } from 'react';
 import { Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
-// Sound effect imports
-import PADDLE_HIT_SOUND from './assets/sounds/bip.mp3';
-import SCORE_SOUND from './assets/sounds/score.mp3';
+// Sound effect imports - These are audio files that play during game events
+import PADDLE_HIT_SOUND from './assets/sounds/bip.mp3';  // Sound when ball hits paddle
+import SCORE_SOUND from './assets/sounds/score.mp3';      // Sound when player scores
 
 const Pong = () => {
-  // Reference to the canvas element for drawing the game
+  // ========================================
+  // REACT STATE AND REFS SETUP
+  // ========================================
+  
+  // Canvas reference - Direct access to the HTML5 canvas element for drawing
   const canvasRef = useRef(null);
-  // State to track if a gamepad is connected
+  
+  // Gamepad connection state - Tracks if a gamepad controller is connected
   const [gamepadConnected, setGamepadConnected] = useState(false);
-  // Game state management (start, playing, paused)
-  const [_, setGameState] = useState('start'); // 'start', 'playing', 'paused'
-  const gameStateRef = useRef('start'); // Ref to track current game state for immediate access
   
-  // Mobile device detection
-  const [isMobile, setIsMobile] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  // Game state management - Controls the current phase of the game
+  const [_, setGameState] = useState('start'); // React state (not used directly in game logic)
+  const gameStateRef = useRef('start'); // Ref for immediate access in game loop
+  // Possible states: 'start' (waiting to begin), 'playing' (active game), 'paused' (game paused)
   
-  // Track input source and game active state
-  const inputSource = useRef('keyboard'); // 'keyboard', 'gamepad', or 'touch'
+  // Mobile device detection states
+  const [isMobile, setIsMobile] = useState(false);     // Is this a mobile device?
+  const [isPaused, setIsPaused] = useState(false);     // Is the game currently paused?
+  
+  // Input source tracking - Determines which input method is currently being used
+  const inputSource = useRef('keyboard'); // Options: 'keyboard', 'gamepad', 'touch'
+  
+  // Game lifecycle control - Used to stop the game loop when component unmounts
   const isGameActive = useRef(true);
   
-  // Touch control state
-  const touchStartY = useRef(null);
-  const isDragging = useRef(false);
+  // ========================================
+  // TOUCH CONTROL STATE VARIABLES
+  // ========================================
   
-  // Double-tap detection for fullscreen
-  const lastTapTime = useRef(0);
-  const doubleTapDelay = 300; // milliseconds
+  // Touch interaction tracking for mobile devices
+  const touchStartY = useRef(null);    // Y-coordinate where touch began
+  const isDragging = useRef(false);    // Is the user currently dragging their finger?
   
-  // Fullscreen mode state
+  // Double-tap detection for fullscreen toggle on mobile
+  const lastTapTime = useRef(0);       // Timestamp of the last tap
+  const doubleTapDelay = 300;          // Maximum time between taps to count as double-tap (milliseconds)
+  
+  // ========================================
+  // FULLSCREEN AND AUDIO REFERENCES
+  // ========================================
+  
+  // Fullscreen mode state - Tracks if the game is in fullscreen mode
   const [isFullscreenMode, setIsFullscreenMode] = useState(false);
   
-  // Audio references for game sounds
-  const paddleHitSound = useRef(null);
-  const scoreSound = useRef(null);
+  // Audio references for game sound effects
+  const paddleHitSound = useRef(null); // Audio object for paddle hit sound
+  const scoreSound = useRef(null);     // Audio object for scoring sound
   
-  // Track gamepad button states to prevent multiple triggers
-  const lastSouthButtonStateRef = useRef(false);
-  const lastEastButtonStateRef = useRef(false);
-  const lastNorthButtonStateRef = useRef(false);
+  // ========================================
+  // GAMEPAD BUTTON STATE TRACKING
+  // ========================================
+  
+  // These refs prevent multiple triggers when gamepad buttons are held down
+  const lastSouthButtonStateRef = useRef(false);  // A button (start/pause game)
+  const lastEastButtonStateRef = useRef(false);   // B button (exit game)
+  const lastNorthButtonStateRef = useRef(false);  // Y button (fullscreen toggle)
 
-  // Mobile device detection function
+  // ========================================
+  // UTILITY FUNCTIONS
+  // ========================================
+
+  /**
+   * Detects if the current device is a mobile device
+   * 
+   * This function uses multiple detection methods to ensure accurate mobile detection:
+   * 1. User agent string analysis - Checks for mobile device keywords
+   * 2. Touch capability detection - Checks if the device supports touch
+   * 3. Touch points detection - Checks maximum number of simultaneous touches
+   * 
+   * @returns {boolean} True if mobile device is detected, false otherwise
+   */
   const detectMobileDevice = () => {
+    // Get user agent string from browser
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    
+    // Check for mobile device patterns in user agent string
     const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase()) ||
-                          ('ontouchstart' in window) ||
-                          (navigator.maxTouchPoints > 0) ||
-                          (navigator.msMaxTouchPoints > 0);
+                          ('ontouchstart' in window) ||           // Touch events supported
+                          (navigator.maxTouchPoints > 0) ||       // Modern touch detection
+                          (navigator.msMaxTouchPoints > 0);       // IE/Edge touch detection
     return isMobileDevice;
   };
 
-  
-  // Custom state setter that updates both state and ref
+  /**
+   * Updates both React state and ref for game state
+   * 
+   * We need both because:
+   * - React state triggers re-renders for UI updates
+   * - Ref provides immediate access in the game loop without waiting for re-renders
+   * 
+   * @param {string} newState - The new game state ('start', 'playing', or 'paused')
+   */
   const updateGameState = (newState) => {
-    gameStateRef.current = newState;
-    setGameState(newState);
+    gameStateRef.current = newState;  // Update ref for immediate access
+    setGameState(newState);           // Update React state for UI re-rendering
   };
-  
+
   useEffect(() => {
-    // Mobile device detection
+    // ========================================
+    // COMPONENT INITIALIZATION AND SETUP
+    // ========================================
+    
+    // Detect if this is a mobile device and store the result
+    // This affects input handling, UI display, and fullscreen behavior
     const mobileDetected = detectMobileDevice();
     setIsMobile(mobileDetected);
     console.log("Mobile device detected:", mobileDetected);
     
-    // Audio initialization
-    paddleHitSound.current = new Audio(PADDLE_HIT_SOUND);
-    scoreSound.current = new Audio(SCORE_SOUND);
+    // ========================================
+    // AUDIO SYSTEM INITIALIZATION
+    // ========================================
     
-    // Canvas setup - Get the canvas element and its 2D rendering context
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    // Create Audio objects for game sound effects
+    // These are loaded once and reused throughout the game
+    paddleHitSound.current = new Audio(PADDLE_HIT_SOUND);  // Sound when ball hits paddle
+    scoreSound.current = new Audio(SCORE_SOUND);           // Sound when someone scores
     
-    // We'll set up the gamepad polling interval after defining the pollGamepad function
+    // ========================================
+    // CANVAS AND RENDERING CONTEXT SETUP
+    // ========================================
+    
+    // Get references to the canvas element and its 2D rendering context
+    // The canvas is where all game graphics are drawn
+    const canvas = canvasRef.current;                      // HTML5 canvas element
+    const ctx = canvas.getContext('2d');                   // 2D rendering context for drawing
+    
+    // Gamepad polling interval variable (will be initialized later)
+    // This controls how often we check for gamepad input (~60fps)
     let gamepadPollingInterval;
     
-    // Game constants - Define the size of game elements
-    const paddleHeight = 100;  // Height of both paddles
-    const paddleWidth = 10;    // Width of both paddles
-    const ballRadius = 8;      // Radius of the ball
-    const frameOffset = 24;    // Frame border thickness on all sides
+    // ========================================
+    // GAME CONSTANTS AND DIMENSIONS
+    // ========================================
     
-    // Game area dimensions (excluding frame)
-    const gameWidth = canvas.width - (frameOffset * 2);   // 800px game area
-    const gameHeight = canvas.height - (frameOffset * 2); // 500px game area
+    // Define the physical dimensions of all game objects
+    const paddleHeight = 100;  // Height of both player and computer paddles (pixels)
+    const paddleWidth = 10;    // Width of both paddles (pixels)
+    const ballRadius = 8;      // Radius of the game ball (pixels)
+    const frameOffset = 24;    // Thickness of the decorative frame border (pixels)
     
-    // Ball position and speed - Initial values (adjusted for frame)
-    let ballX = frameOffset + gameWidth / 2;   // Start ball in horizontal center of game area
-    let ballY = frameOffset + gameHeight / 2;  // Start ball in vertical center of game area
-    let ballSpeedX = 5;                        // Initial horizontal speed (positive = right)
-    let ballSpeedY = 3;                        // Initial vertical speed (positive = down)
+    // Calculate the actual playable game area (excluding the decorative frame)
+    const gameWidth = canvas.width - (frameOffset * 2);   // 800px playable width
+    const gameHeight = canvas.height - (frameOffset * 2); // 500px playable height
     
-    // Paddle positions - Both paddles start in the middle vertically (adjusted for frame)
-    let player1Y = frameOffset + (gameHeight - paddleHeight) / 2;  // Left paddle (player)
-    let player2Y = frameOffset + (gameHeight - paddleHeight) / 2;  // Right paddle (computer)
+    // ========================================
+    // GAME OBJECT INITIAL POSITIONS AND PHYSICS
+    // ========================================
     
-    // Score tracking
-    let player1Score = 0;  // Player score
-    let player2Score = 0;  // Computer score
+    // Ball starting position and velocity
+    // The ball starts in the center of the playable area
+    let ballX = frameOffset + gameWidth / 2;   // Horizontal center of game area
+    let ballY = frameOffset + gameHeight / 2;  // Vertical center of game area
+    let ballSpeedX = 5;                        // Initial horizontal velocity (positive = moving right)
+    let ballSpeedY = 3;                        // Initial vertical velocity (positive = moving down)
     
-    // Keyboard state tracking for player controls
-    let upPressed = false;    // Is up arrow key pressed?
-    let downPressed = false;  // Is down arrow key pressed?
+    // Paddle starting positions
+    // Both paddles start vertically centered in the game area
+    let player1Y = frameOffset + (gameHeight - paddleHeight) / 2;  // Left paddle (human player)
+    let player2Y = frameOffset + (gameHeight - paddleHeight) / 2;  // Right paddle (AI computer)
     
-    // Gamepad reference and state
-    let gamepads = {};
-    let gamepadIndex = null;
+    // ========================================
+    // GAME STATE VARIABLES
+    // ========================================
     
-    // Computer AI difficulty (0-1)
-    // Higher values make the computer more responsive and harder to beat
+    // Score tracking for both players
+    let player1Score = 0;  // Human player's score (left side)
+    let player2Score = 0;  // Computer AI's score (right side)
+    
+    // Input state tracking for keyboard controls
+    // These flags track which keys are currently pressed
+    let upPressed = false;    // Is the up arrow key currently pressed?
+    let downPressed = false;  // Is the down arrow key currently pressed?
+    
+    // ========================================
+    // GAMEPAD SYSTEM VARIABLES
+    // ========================================
+    
+    // Gamepad connection and state management
+    let gamepads = {};        // Object to store connected gamepad references
+    let gamepadIndex = null;  // Index of the currently active gamepad (null if none)
+    
+    // ========================================
+    // AI DIFFICULTY CONFIGURATION
+    // ========================================
+    
+    // Computer AI difficulty level (0.0 to 1.0)
+    // 0.0 = Computer never moves (easiest)
+    // 1.0 = Computer tracks ball perfectly (hardest)
+    // 0.85 = Challenging but beatable difficulty
     const computerDifficulty = 0.85;
     
+    // ========================================
+    // GAMEPAD EVENT HANDLERS
+    // ========================================
+    
     /**
-     * Handle gamepad connection event
-     * @param {GamepadEvent} e - The gamepad connection event
+     * Handles gamepad connection events
+     * 
+     * When a gamepad is connected to the system, this function:
+     * 1. Logs the connection for debugging
+     * 2. Stores the gamepad reference for later use
+     * 3. Sets the active gamepad index
+     * 4. Updates the UI to show gamepad is connected
+     * 
+     * @param {GamepadEvent} e - Browser event containing gamepad information
      */
     const gamepadConnectHandler = (e) => {
       console.log("Gamepad connected:", e.gamepad.id);
-      gamepads[e.gamepad.index] = e.gamepad;
-      gamepadIndex = e.gamepad.index;
-      setGamepadConnected(true);
+      gamepads[e.gamepad.index] = e.gamepad;  // Store gamepad reference
+      gamepadIndex = e.gamepad.index;         // Set as active gamepad
+      setGamepadConnected(true);              // Update React state for UI
     };
     
     /**
-     * Handle gamepad disconnection event
-     * @param {GamepadEvent} e - The gamepad disconnection event
+     * Handles gamepad disconnection events
+     * 
+     * When a gamepad is disconnected from the system, this function:
+     * 1. Logs the disconnection for debugging
+     * 2. Removes the gamepad reference from storage
+     * 3. Clears the active gamepad index if it was the disconnected one
+     * 4. Updates the UI to show no gamepad is connected
+     * 
+     * @param {GamepadEvent} e - Browser event containing gamepad information
      */
     const gamepadDisconnectHandler = (e) => {
       console.log("Gamepad disconnected:", e.gamepad.id);
-      delete gamepads[e.gamepad.index];
+      delete gamepads[e.gamepad.index];       // Remove gamepad reference
       if (gamepadIndex === e.gamepad.index) {
-        gamepadIndex = null;
+        gamepadIndex = null;                  // Clear active gamepad if it was this one
       }
-      setGamepadConnected(false);
+      setGamepadConnected(false);             // Update React state for UI
     };
     
-    // Add gamepad event listeners inside useEffect for proper cleanup
-    // (These will be moved to useEffect)
+    // ========================================
+    // GAMEPAD DETECTION FOR ALREADY CONNECTED DEVICES
+    // ========================================
     
-    // Check if a gamepad is already connected
+    /**
+     * Checks for gamepads that were already connected before the page loaded
+     * 
+     * The Gamepad API doesn't fire connection events for devices that were
+     * already connected when the page loaded, so we need to manually check.
+     * This function scans all gamepad slots and activates the first one found.
+     */
     const checkGamepads = () => {
+      // Get array of all connected gamepads (some slots may be null)
       const connectedGamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+      
+      // Scan through all possible gamepad slots
       for (let i = 0; i < connectedGamepads.length; i++) {
-        if (connectedGamepads[i]) {
-          gamepads[connectedGamepads[i].index] = connectedGamepads[i];
-          gamepadIndex = connectedGamepads[i].index;
-          setGamepadConnected(true);
+        if (connectedGamepads[i]) {  // If a gamepad exists in this slot
+          gamepads[connectedGamepads[i].index] = connectedGamepads[i];  // Store reference
+          gamepadIndex = connectedGamepads[i].index;                    // Set as active
+          setGamepadConnected(true);                                    // Update UI
           console.log("Found existing gamepad:", connectedGamepads[i].id);
-          break;
+          break;  // Use the first gamepad found
         }
       }
     };
-    
-    // Check if a gamepad is already connected (moved to useEffect)
-    
-    // Event listeners for paddle control
+
     /**
-     * Handle key press events for paddle movement and game control
-     * @param {KeyboardEvent} e - The keyboard event
+     * Handles key press events for paddle movement and game control
+     * 
+     * This function processes all keyboard input for the game:
+     * - SPACE: Start game or toggle pause/resume
+     * - ESCAPE: Exit game (only when paused)
+     * - ENTER: Toggle fullscreen mode
+     * - ARROW KEYS: Start game or control paddle movement
+     * 
+     * @param {KeyboardEvent} e - The keyboard event object containing key information
      */
     const keyDownHandler = (e) => {
-      // Set input source to keyboard when keyboard is used
-  inputSource.current = 'keyboard';
+      // Set input source to keyboard when any keyboard input is detected
+      // This helps the UI show appropriate instructions for the current input method
+      inputSource.current = 'keyboard';
       
-      // Game state controls
+      // ========================================
+      // SPACEBAR - GAME STATE CONTROL
+      // ========================================
       if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault();
+        e.preventDefault(); // Prevent page scrolling
         
-        // Toggle between start/playing or playing/paused states
+        // Handle different game state transitions based on current state
         if (gameStateRef.current === 'start') {
+          // Start the game from the initial screen
           updateGameState('playing');
         } else if (gameStateRef.current === 'playing') {
+          // Pause the active game
           updateGameState('paused');
         } else if (gameStateRef.current === 'paused') {
+          // Resume the paused game
           updateGameState('playing');
         }
-        return;
+        return; // Exit early to prevent other key processing
       }
       
-      // Escape key only works in pause state to exit
+      // ========================================
+      // ESCAPE KEY - EXIT GAME (PAUSE STATE ONLY)
+      // ========================================
       if (e.key === 'Escape') {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default browser behavior
+        
+        // Only allow exit when game is paused (safety feature)
+        // This prevents accidental exits during active gameplay
         if (gameStateRef.current === 'paused') {
-          // Clean up game resources and exit
-          cleanupGame();
+          cleanupGame(); // Properly clean up resources and exit
         }
-        // No action for Escape in other states
+        // Ignore Escape key in other states (start/playing)
         return;
       }
       
-      // Enter key toggles fullscreen
+      // ========================================
+      // ENTER KEY - FULLSCREEN TOGGLE
+      // ========================================
       if (e.key === 'Enter') {
-        e.preventDefault();
-        toggleFullscreenMode();
+        e.preventDefault(); // Prevent form submission or other default behavior
+        toggleFullscreenMode(); // Toggle between windowed and fullscreen modes
         return;
       }
       
-      // Start game with arrow keys
+      // ========================================
+      // ARROW KEYS - GAME START FROM START SCREEN
+      // ========================================
       if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameStateRef.current === 'start') {
-        e.preventDefault();
-        updateGameState('playing');
+        e.preventDefault(); // Prevent page scrolling
+        updateGameState('playing'); // Start the game immediately
         return;
       }
       
-      // Paddle movement controls (only when playing)
+      // ========================================
+      // ARROW KEYS - PADDLE MOVEMENT (PLAYING STATE ONLY)
+      // ========================================
       if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && gameStateRef.current === 'playing') {
         // Prevent default browser scrolling behavior
         e.preventDefault();
         
-        // Set input source to keyboard
+        // Confirm keyboard as the active input source
         inputSource.current = 'keyboard';
         
+        // Set movement flags based on which arrow key was pressed
         if (e.key === 'ArrowUp') {
-          upPressed = true;  // Mark up arrow as pressed
+          upPressed = true;    // Enable upward paddle movement
         } else if (e.key === 'ArrowDown') {
-          downPressed = true;  // Mark down arrow as pressed
+          downPressed = true;  // Enable downward paddle movement
         }
       }
     };
     
     /**
-     * Handle key release events for paddle movement
-     * Clears the direction flag when arrow keys are released
-     * @param {KeyboardEvent} e - The keyboard event
+     * Handles key release events for paddle movement
+     * 
+     * This function clears movement flags when arrow keys are released,
+     * stopping paddle movement. It only responds to keyboard events when
+     * keyboard is the current input source to avoid conflicts with gamepad input.
+     * 
+     * @param {KeyboardEvent} e - The keyboard event object
      */
     const keyUpHandler = (e) => {
+      // Only process arrow key releases
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         // Only handle keyboard events if keyboard is the current input source
+        // This prevents gamepad input from being overridden by stale keyboard events
         if (inputSource.current === 'keyboard') {
           if (e.key === 'ArrowUp') {
-            upPressed = false;  // Mark up arrow as released
+            upPressed = false;    // Stop upward paddle movement
           } else if (e.key === 'ArrowDown') {
-            downPressed = false;  // Mark down arrow as released
+            downPressed = false;  // Stop downward paddle movement
           }
         }
       }
@@ -248,204 +421,331 @@ const Pong = () => {
     
     // Event listeners will be added in useEffect for proper cleanup
     
-    // Touch event handlers for mobile devices
-    /**
-     * Handle touch start events for paddle movement and game control
-     * @param {TouchEvent} e - The touch event
-     */
-     const touchStartHandler = (e) => {
-       e.preventDefault();
-       
-       const touch = e.touches[0];
-       const rect = canvas.getBoundingClientRect();
-       const touchX = touch.clientX - rect.left;
-       const touchY = touch.clientY - rect.top;
-       
-       // Set input source to touch
-       inputSource.current = 'touch';
-       
-       // Double-tap detection for fullscreen
-       const currentTime = Date.now();
-       const timeDiff = currentTime - lastTapTime.current;
-       
-       if (timeDiff < doubleTapDelay) {
-         // Double-tap detected - toggle fullscreen
-         toggleFullscreenMode();
-         lastTapTime.current = 0; // Reset to prevent triple-tap issues
-         return;
-       }
-       
-       lastTapTime.current = currentTime;
-       
-       // Check if touch is on exit button when paused
-       if (gameStateRef.current === 'paused') {
-         const buttonWidth = 80;
-         const buttonHeight = 40;
-         const buttonX = 20;
-         const buttonY = 20;
-         
-         // Check if touch is within exit button bounds
-         if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
-             touchY >= buttonY && touchY <= buttonY + buttonHeight) {
-           // Exit button clicked
-           cleanupGame();
-           return;
-         }
-       }
-       
-       // Store initial touch position for dragging
-       touchStartY.current = touchY;
-       isDragging.current = false;
-       
-       // Handle tap-to-pause/unpause
-       if (gameStateRef.current === 'start') {
-         updateGameState('playing');
-       } else if (gameStateRef.current === 'playing') {
-         // Don't pause immediately on touch start, wait to see if it's a drag
-         setTimeout(() => {
-           if (!isDragging.current) {
-             updateGameState('paused');
-           }
-         }, 100);
-       } else if (gameStateRef.current === 'paused') {
-         updateGameState('playing');
-       }
-     };
+    // ========================================
+    // TOUCH EVENT HANDLERS FOR MOBILE DEVICES
+    // ========================================
     
     /**
-     * Handle touch move events for paddle dragging
-     * @param {TouchEvent} e - The touch event
+     * Handles touch start events for mobile paddle control and game interaction
+     * 
+     * This function manages all touch-based interactions including:
+     * - Game state control (start/pause/resume)
+     * - Double-tap detection for fullscreen toggle
+     * - Exit button interaction when paused
+     * - Initial touch position tracking for paddle dragging
+     * 
+     * @param {TouchEvent} e - The touch event object containing touch information
      */
-    const touchMoveHandler = (e) => {
+    const touchStartHandler = (e) => {
+      // Prevent default browser touch behavior (scrolling, zooming, etc.)
       e.preventDefault();
       
+      // Get the first touch point (we only handle single-touch input)
+      const touch = e.touches[0];
+      
+      // Calculate touch position relative to the canvas element
+      const rect = canvas.getBoundingClientRect(); // Get canvas position on screen
+      const touchX = touch.clientX - rect.left;    // Touch X relative to canvas
+      const touchY = touch.clientY - rect.top;     // Touch Y relative to canvas
+      
+      // Set input source to touch for UI instruction display
+      inputSource.current = 'touch';
+      
+      // ========================================
+      // DOUBLE-TAP DETECTION FOR FULLSCREEN TOGGLE
+      // ========================================
+      
+      // Get current timestamp for double-tap timing calculation
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastTapTime.current;
+      
+      // Check if this tap occurred within the double-tap time window
+      if (timeDiff < doubleTapDelay) {
+        // Double-tap detected - toggle fullscreen mode
+        toggleFullscreenMode();
+        lastTapTime.current = 0; // Reset to prevent triple-tap issues
+        return; // Exit early to prevent other touch processing
+      }
+      
+      // Store this tap time for future double-tap detection
+      lastTapTime.current = currentTime;
+      
+      // ========================================
+      // EXIT BUTTON INTERACTION (PAUSE STATE ONLY)
+      // ========================================
+      
+      // Check if the game is paused and user touched the exit button
+      if (gameStateRef.current === 'paused') {
+        // Define exit button dimensions and position (top-left corner)
+        const buttonWidth = 80;   // Button width in pixels
+        const buttonHeight = 40;  // Button height in pixels
+        const buttonX = 20;       // Button X position from left edge
+        const buttonY = 20;       // Button Y position from top edge
+        
+        // Check if touch coordinates are within the exit button bounds
+        if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
+            touchY >= buttonY && touchY <= buttonY + buttonHeight) {
+          // Exit button was touched - clean up and exit the game
+          cleanupGame();
+          return; // Exit early to prevent other touch processing
+        }
+      }
+      
+      // ========================================
+      // PADDLE DRAGGING INITIALIZATION
+      // ========================================
+      
+      // Store the initial touch Y position for calculating paddle movement
+      // This allows for relative movement based on finger drag distance
+      touchStartY.current = touchY;
+      isDragging.current = false; // Reset dragging state
+      
+      // ========================================
+      // GAME STATE CONTROL VIA TOUCH
+      // ========================================
+      
+      // Handle different game state transitions based on current state
+      if (gameStateRef.current === 'start') {
+        // Start the game immediately when touched from start screen
+        updateGameState('playing');
+      } else if (gameStateRef.current === 'playing') {
+        // Don't pause immediately on touch start - wait to see if it's a drag gesture
+        // This prevents accidental pausing when user intends to drag the paddle
+        setTimeout(() => {
+          // Only pause if the user didn't start dragging within 100ms
+          if (!isDragging.current) {
+            updateGameState('paused');
+          }
+        }, 100); // 100ms delay to detect drag intent
+      } else if (gameStateRef.current === 'paused') {
+        // Resume the game immediately when touched from pause screen
+        updateGameState('playing');
+      }
+    };
+   
+    /**
+     * Handles touch move events for paddle dragging control
+     * 
+     * This function enables smooth paddle movement by tracking finger movement
+     * and translating it to paddle position changes. It includes:
+     * - Drag detection based on movement threshold
+     * - Relative paddle movement calculation
+     * - Paddle boundary constraint enforcement
+     * 
+     * @param {TouchEvent} e - The touch event object containing current touch position
+     */
+    const touchMoveHandler = (e) => {
+      // Prevent default browser touch behavior (scrolling, selection, etc.)
+      e.preventDefault();
+      
+      // Exit early if no initial touch position was recorded
       if (touchStartY.current === null) return;
       
+      // Get current touch position relative to canvas
       const touch = e.touches[0];
       const rect = canvas.getBoundingClientRect();
       const touchY = touch.clientY - rect.top;
       
-      // Calculate movement threshold to determine if this is a drag (reduced for better sensitivity)
-      const moveThreshold = 3;
+      // ========================================
+      // DRAG DETECTION AND THRESHOLD CHECK
+      // ========================================
+      
+      // Calculate movement threshold to determine if this is intentional dragging
+      // A small threshold prevents accidental paddle movement from tiny finger movements
+      const moveThreshold = 3; // Pixels of movement required to register as drag
+      
+      // Check if finger has moved beyond the threshold distance
       if (Math.abs(touchY - touchStartY.current) > moveThreshold) {
-        isDragging.current = true;
+        isDragging.current = true; // Mark as active dragging gesture
       }
       
-      // Only move paddle during gameplay and when dragging
+      // ========================================
+      // PADDLE MOVEMENT DURING ACTIVE GAMEPLAY
+      // ========================================
+      
+      // Only process paddle movement when game is active and user is dragging
       if (gameStateRef.current === 'playing' && isDragging.current) {
-        // Calculate relative movement from last touch position
+        // Calculate relative movement from the last recorded touch position
+        // This allows for smooth, continuous paddle movement
         const deltaY = touchY - touchStartY.current;
         const newPaddleY = player1Y + deltaY;
         
-        // Constrain paddle within canvas bounds (accounting for frame offset)
-        const minY = frameOffset;
-        const maxY = frameOffset + gameHeight - paddleHeight;
+        // ========================================
+        // PADDLE BOUNDARY CONSTRAINT ENFORCEMENT
+        // ========================================
         
+        // Define the valid movement area for the paddle (within game frame)
+        const minY = frameOffset; // Top boundary (frame edge)
+        const maxY = frameOffset + gameHeight - paddleHeight; // Bottom boundary
+        
+        // Apply the new paddle position with boundary constraints
         if (newPaddleY >= minY && newPaddleY <= maxY) {
+          // Position is within bounds - apply directly
           player1Y = newPaddleY;
         } else if (newPaddleY < minY) {
+          // Position is above top boundary - clamp to minimum
           player1Y = minY;
         } else if (newPaddleY > maxY) {
+          // Position is below bottom boundary - clamp to maximum
           player1Y = maxY;
         }
         
-        // Update touch start position for continuous relative movement
+        // Update the reference touch position for continuous relative movement
+        // This ensures smooth movement even during long drag gestures
         touchStartY.current = touchY;
       }
     };
     
     /**
-     * Handle touch end events
-     * @param {TouchEvent} e - The touch event
+     * Handles touch end events to clean up touch state
+     * 
+     * This function resets all touch-related state variables when the user
+     * lifts their finger from the screen, ensuring clean state for the next touch.
+     * 
+     * @param {TouchEvent} e - The touch event object (not used but required by API)
      */
     const touchEndHandler = (e) => {
+      // Prevent default browser touch behavior
       e.preventDefault();
       
-      // Reset touch state
-      touchStartY.current = null;
-      isDragging.current = false;
+      // ========================================
+      // TOUCH STATE CLEANUP
+      // ========================================
       
-      // Reset movement flags
-      upPressed = false;
-      downPressed = false;
+      // Reset touch tracking variables to initial state
+      touchStartY.current = null;    // Clear initial touch position
+      isDragging.current = false;    // Clear dragging state
+      
+      // Reset paddle movement flags (safety cleanup)
+      // These should already be false for touch input, but reset for consistency
+      upPressed = false;    // Clear upward movement flag
+      downPressed = false;  // Clear downward movement flag
     };
     
-    // Draw functions
+    // ========================================
+    // CANVAS DRAWING FUNCTIONS
+    // ========================================
+    
     /**
-     * Draws the ball on the canvas
-     * Creates a white circle at the ball's current position
+     * Draws the game ball on the canvas
+     * 
+     * Creates a white circular ball at the current ball position using
+     * HTML5 Canvas arc drawing. The ball is always drawn as a perfect circle
+     * with the radius defined in game constants.
      */
     const drawBall = () => {
-      ctx.beginPath();
+      ctx.beginPath(); // Start a new drawing path
+      
+      // Draw a complete circle (0 to 2π radians) at ball position
       ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+      
+      // Set fill color to white for visibility against black background
       ctx.fillStyle = '#FFFFFF';
-      ctx.fill();
-      ctx.closePath();
+      ctx.fill(); // Fill the circle with the specified color
+      
+      ctx.closePath(); // Close the drawing path (good practice)
     };
     
     /**
-     * Draws a paddle on the canvas
-     * @param {number} x - The x-coordinate of the paddle
-     * @param {number} y - The y-coordinate of the paddle
+     * Draws a paddle on the canvas at the specified position
+     * 
+     * Creates a white rectangular paddle using HTML5 Canvas rectangle drawing.
+     * Both player and computer paddles use this same function with different coordinates.
+     * 
+     * @param {number} x - The x-coordinate of the paddle's top-left corner
+     * @param {number} y - The y-coordinate of the paddle's top-left corner
      */
     const drawPaddle = (x, y) => {
-      ctx.beginPath();
+      ctx.beginPath(); // Start a new drawing path
+      
+      // Draw a rectangle with specified position and paddle dimensions
       ctx.rect(x, y, paddleWidth, paddleHeight);
+      
+      // Set fill color to white for visibility against black background
       ctx.fillStyle = '#FFFFFF';
-      ctx.fill();
-      ctx.closePath();
+      ctx.fill(); // Fill the rectangle with the specified color
+      
+      ctx.closePath(); // Close the drawing path (good practice)
     };
     
     /**
-     * Draws the current score on the canvas
-     * Player score on the left, computer score on the right
+     * Draws the current game score on the canvas
+     * 
+     * Displays both player scores in the upper portion of the game area.
+     * Player 1 score appears on the left quarter, Player 2 score on the right quarter.
+     * Uses Arial font for clean, readable text display.
      */
     const drawScore = () => {
-      ctx.font = '24px Arial';
-      ctx.fillStyle = '#FFFFFF';
-      ctx.textAlign = 'center';
+      // Set font properties for score display
+      ctx.font = '24px Arial';        // 24px Arial font for good readability
+      ctx.fillStyle = '#FFFFFF';      // White text for visibility
+      ctx.textAlign = 'center';       // Center-align text for balanced appearance
+      
+      // Draw Player 1 score (left side) - positioned at 1/4 of game width
       ctx.fillText(player1Score, frameOffset + gameWidth / 4, frameOffset + 30);
+      
+      // Draw Player 2 score (right side) - positioned at 3/4 of game width
       ctx.fillText(player2Score, frameOffset + (gameWidth / 4) * 3, frameOffset + 30);
     };
     
     /**
-     * Draws the game frame border
-     * Creates a multi-layered border around the game area
+     * Draws the decorative game frame border around the play area
+     * 
+     * Creates a multi-layered border effect with three distinct layers:
+     * 1. Outer black layer for depth
+     * 2. Middle white layer for contrast
+     * 3. Inner grey layer for subtle detail
+     * 
+     * This creates a classic arcade-style frame appearance.
      */
     const drawFrame = () => {
-      // Draw borders from outside to inside for proper layering
+      // Define the three border layers from outside to inside
+      // Each layer has different color, width, and offset properties
       const borderLayers = [
-        { color: '#000000', width: 10, offset: 0 },   // Outer black layer
-        { color: '#FFFFFF', width: 8, offset: 10 },   // Middle white layer  
-        { color: '#808080', width: 8, offset: 18 }    // Inner grey layer
+        { color: '#000000', width: 10, offset: 0 },   // Outer black layer (deepest)
+        { color: '#FFFFFF', width: 8, offset: 10 },   // Middle white layer (contrast)
+        { color: '#808080', width: 8, offset: 18 }    // Inner grey layer (subtle detail)
       ];
       
+      // Draw each border layer in sequence (outside to inside)
       borderLayers.forEach(layer => {
-        ctx.strokeStyle = layer.color;
-        ctx.lineWidth = layer.width;
+        // Set stroke properties for this layer
+        ctx.strokeStyle = layer.color;  // Set the color for this border layer
+        ctx.lineWidth = layer.width;    // Set the thickness for this border layer
         
-        // Calculate border position with proper offset
-        const x = layer.offset + layer.width / 2;
-        const y = layer.offset + layer.width / 2;
-        const width = canvas.width - (layer.offset + layer.width / 2) * 2;
-        const height = canvas.height - (layer.offset + layer.width / 2) * 2;
+        // Calculate border rectangle position accounting for layer offset and width
+        const x = layer.offset + layer.width / 2;      // X position (centered on line width)
+        const y = layer.offset + layer.width / 2;      // Y position (centered on line width)
+        const width = canvas.width - (layer.offset + layer.width / 2) * 2;   // Rectangle width
+        const height = canvas.height - (layer.offset + layer.width / 2) * 2; // Rectangle height
         
-        // Draw border rectangle with clean, simple lines
+        // Draw the border rectangle with calculated dimensions
         ctx.strokeRect(x, y, width, height);
       });
     };
     
     /**
-     * Draws the center net line (dashed)
-     * Creates a vertical dashed line in the middle of the game area
+     * Draws the center net line (dashed vertical line)
+     * 
+     * Creates a classic Pong-style dashed line down the center of the play area
+     * to visually separate the two player sides. The dashes are evenly spaced
+     * white rectangles that span the full height of the game area.
      */
     const drawNet = () => {
+      // Draw dashed line segments from top to bottom of game area
+      // Each segment is 20px tall with 20px gaps (40px total spacing)
       for (let i = frameOffset; i < frameOffset + gameHeight; i += 40) {
-        ctx.beginPath();
+        ctx.beginPath(); // Start new path for each dash segment
+        
+        // Draw a small vertical rectangle for each dash
+        // Positioned at horizontal center, 2px wide, 20px tall
         ctx.rect(frameOffset + gameWidth / 2 - 1, i, 2, 20);
+        
+        // Set fill color to white for visibility
         ctx.fillStyle = '#FFFFFF';
-        ctx.fill();
-        ctx.closePath();
+        ctx.fill(); // Fill the rectangle
+        
+        ctx.closePath(); // Close the path (good practice)
       }
     };
     
@@ -680,45 +980,68 @@ const Pong = () => {
     };
     
     /**
-     * Toggles custom fullscreen mode using CSS transform scale
+     * ========================================
+     * FULLSCREEN MODE MANAGEMENT
+     * ========================================
+     * 
+     * Toggles custom fullscreen mode using CSS transform scale.
+     * This provides cross-platform fullscreen support that works on both desktop and mobile.
+     * 
+     * DESKTOP BEHAVIOR:
+     * - Scales the canvas to fit the entire viewport while maintaining aspect ratio
+     * - Hides all other page elements using CSS visibility
+     * - Centers the canvas using CSS transforms
+     * 
+     * MOBILE BEHAVIOR:
+     * - Uses visualViewport API for accurate mobile viewport dimensions
+     * - Accounts for mobile browser UI elements (address bar, etc.)
+     * - Provides smaller padding to maximize screen usage
+     * 
+     * SCALING LOGIC:
+     * - Calculates both horizontal and vertical scale factors
+     * - Uses the smaller scale to maintain aspect ratio (no stretching)
+     * - Allows scaling down to fit smaller screens
      */
     const toggleFullscreenMode = () => {
       setIsFullscreenMode(prev => {
         const newFullscreenState = !prev;
         
         if (newFullscreenState) {
-          // Get viewport dimensions (use visualViewport for mobile if available)
+          // ========================================
+          // ENTERING FULLSCREEN MODE
+          // ========================================
+          
+          // Get accurate viewport dimensions (mobile-aware)
+          // visualViewport provides more accurate dimensions on mobile devices
           const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
           const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
           
-          // Add some padding to prevent edge clipping (smaller on mobile)
-          const padding = isMobile ? 10 : 20;
+          // Calculate available space with padding to prevent edge clipping
+          const padding = isMobile ? 10 : 20; // Smaller padding on mobile for maximum screen usage
           const availableWidth = viewportWidth - padding * 2;
           const availableHeight = viewportHeight - padding * 2;
           
-          // Calculate scale based on original canvas size
-          const scaleX = availableWidth / canvas.width;
-          const scaleY = availableHeight / canvas.height;
-          const scale = Math.min(scaleX, scaleY); // Use smaller scale to maintain aspect ratio
+          // Calculate scale factors for both dimensions
+          const scaleX = availableWidth / canvas.width;   // Horizontal scale factor
+          const scaleY = availableHeight / canvas.height; // Vertical scale factor
+          const scale = Math.min(scaleX, scaleY);         // Use smaller scale to maintain aspect ratio
           
-          // Use the calculated scale (allow scaling down to fit screen)
+          // Apply the calculated scale (allows scaling down for smaller screens)
           const finalScale = scale;
           
-          // Apply fullscreen styles with scale transform
-          canvas.style.position = 'fixed';
-          canvas.style.top = '50%';
-          canvas.style.left = '50%';
-          canvas.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
-          canvas.style.zIndex = '9999';
-          canvas.style.maxWidth = 'none'; // Override the maxWidth constraint
+          // Apply CSS transforms to create fullscreen effect
+          canvas.style.position = 'fixed';                                    // Remove from document flow
+          canvas.style.top = '50%';                                          // Center vertically
+          canvas.style.left = '50%';                                         // Center horizontally
+          canvas.style.transform = `translate(-50%, -50%) scale(${finalScale})`; // Center and scale
+          canvas.style.zIndex = '9999';                                      // Bring to front
+          canvas.style.maxWidth = 'none';                                    // Override responsive constraints
           
-          // Hide body overflow and all other page elements
+          // Hide page scrollbars and other elements
           document.body.style.overflow = 'hidden';
-          
-          // Hide all elements except the canvas by adding a fullscreen class to body
           document.body.classList.add('pong-fullscreen');
           
-          // Create and inject CSS to hide all elements except the canvas
+          // Inject CSS to hide all page elements except the canvas
           const fullscreenStyle = document.createElement('style');
           fullscreenStyle.id = 'pong-fullscreen-style';
           fullscreenStyle.textContent = `
@@ -732,19 +1055,23 @@ const Pong = () => {
           document.head.appendChild(fullscreenStyle);
           
         } else {
-          // Reset canvas style to original
+          // ========================================
+          // EXITING FULLSCREEN MODE
+          // ========================================
+          
+          // Reset all canvas styles to original values
           canvas.style.position = '';
           canvas.style.top = '';
           canvas.style.left = '';
           canvas.style.transform = '';
           canvas.style.zIndex = '';
-          canvas.style.maxWidth = ''; // Reset maxWidth
+          canvas.style.maxWidth = '';
           
-          // Restore body overflow
+          // Restore page scrolling and visibility
           document.body.style.overflow = '';
-          
-          // Remove fullscreen class and styles
           document.body.classList.remove('pong-fullscreen');
+          
+          // Remove injected fullscreen styles
           const fullscreenStyle = document.getElementById('pong-fullscreen-style');
           if (fullscreenStyle) {
             fullscreenStyle.remove();
@@ -756,50 +1083,102 @@ const Pong = () => {
     };
 
     /**
-     * Resets the ball to the center of the screen after scoring
-     * Reverses horizontal direction and randomizes vertical direction
+     * ========================================
+     * BALL RESET FUNCTION
+     * ========================================
+     * 
+     * Resets the ball to the center of the game area after a point is scored.
+     * This function is called whenever the ball exits the left or right side of the screen.
+     * 
+     * RESET BEHAVIOR:
+     * - Ball returns to the exact center of the playable game area
+     * - Horizontal direction is reversed (ball serves toward the player who was just scored on)
+     * - Vertical direction is randomized to add variety to each serve
+     * 
+     * PHYSICS DETAILS:
+     * - Horizontal speed maintains the same magnitude but opposite direction
+     * - Vertical speed is randomized between -3 and +3 pixels per frame
+     * - This creates unpredictable serve angles that keep the game interesting
      */
     const resetBall = () => {
-      ballX = frameOffset + gameWidth / 2;    // Center horizontally in game area
-      ballY = frameOffset + gameHeight / 2;   // Center vertically in game area
-      ballSpeedX = -ballSpeedX;               // Reverse horizontal direction
-      ballSpeedY = Math.random() * 6 - 3;  // Random vertical speed between -3 and 3
+      // Reset position to center of playable game area
+      ballX = frameOffset + gameWidth / 2;    // Horizontal center (accounting for frame border)
+      ballY = frameOffset + gameHeight / 2;   // Vertical center (accounting for frame border)
+      
+      // Reverse horizontal direction (serve toward the player who was scored on)
+      ballSpeedX = -ballSpeedX;
+      
+      // Randomize vertical direction for variety
+      // Math.random() * 6 gives 0-6, then subtract 3 to get -3 to +3 range
+      ballSpeedY = Math.random() * 6 - 3;
     };
     
     /**
-     * Draws the start screen with instructions
+     * ========================================
+     * START SCREEN RENDERING
+     * ========================================
+     * 
+     * Draws the initial game screen that appears before gameplay begins.
+     * This screen provides instructions for all supported input methods.
+     * 
+     * SCREEN ELEMENTS:
+     * - Game title in large, prominent font
+     * - Input-specific instructions (keyboard, gamepad, or touch)
+     * - Fullscreen toggle instructions
+     * - Control scheme explanations
+     * 
+     * RESPONSIVE DESIGN:
+     * - Instructions adapt based on detected input method
+     * - Gamepad instructions only appear when a controller is connected
+     * - Touch instructions are shown on mobile devices
+     * - Desktop shows keyboard shortcuts
      */
     const drawStartScreen = () => {
+      // Clear the entire canvas with black background
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Draw title
+      // ========================================
+      // GAME TITLE
+      // ========================================
       ctx.fillStyle = '#FFFFFF';
       ctx.font = '48px Arial';
       ctx.textAlign = 'center';
       ctx.fillText('JavaScript PONG', canvas.width / 2, canvas.height / 3);
       
-      // Draw start instruction based on input source
+      // ========================================
+      // INPUT-SPECIFIC INSTRUCTIONS
+      // ========================================
       ctx.font = '24px Arial';
       
       if (inputSource.current === 'touch') {
+        // ========================================
+        // MOBILE TOUCH INSTRUCTIONS
+        // ========================================
         ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / 2);
+        
+        // Detailed touch control explanations
         ctx.font = '18px Arial';
         ctx.fillText('Drag to move paddle • Tap to pause', canvas.width / 2, canvas.height / 2 + 40);
         ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 70);
+        
       } else {
+        // ========================================
+        // DESKTOP KEYBOARD INSTRUCTIONS
+        // ========================================
         ctx.fillText('Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / 2);
         
-        // Draw gamepad instruction if connected
+        // Show gamepad instructions if a controller is connected
         if (gamepadConnected) {
           ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / 2 + 40);
         }
         
-        // Draw fullscreen instructions for PC
+        // Additional control instructions for desktop
         ctx.font = '18px Arial';
         const yOffset = gamepadConnected ? 70 : 40;
         ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + yOffset);
         
+        // Show gamepad fullscreen instructions if controller is connected
         if (gamepadConnected) {
           ctx.fillText('or Press Y Button for fullscreen', canvas.width / 2, canvas.height / 2 + 100);
         }
@@ -807,119 +1186,231 @@ const Pong = () => {
     };
     
     /**
-     * Draws the pause screen
+     * ========================================
+     * PAUSE SCREEN RENDERING
+     * ========================================
+     * 
+     * Draws the pause overlay screen that appears when the game is paused.
+     * This screen provides context-sensitive instructions based on the current input method.
+     * 
+     * VISUAL ELEMENTS:
+     * - Semi-transparent black overlay to dim the background game
+     * - Large "PAUSED" text for clear status indication
+     * - Input-specific resume instructions (keyboard, gamepad, or touch)
+     * - Fullscreen toggle instructions for each input method
+     * - Exit instructions with appropriate controls for each input type
+     * - Mobile-specific exit button for touch devices
+     * 
+     * MOBILE TOUCH FEATURES:
+     * - Visible red exit button in top-left corner
+     * - White border and text for high contrast
+     * - Touch-friendly button size (80x40 pixels)
+     * - Clear "EXIT" label for accessibility
      */
     const drawPauseScreen = () => {
-      // Semi-transparent overlay
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      // ========================================
+      // SEMI-TRANSPARENT OVERLAY
+      // ========================================
+      // Create a dark overlay to dim the background game while maintaining visibility
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 50% transparent black
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Pause text
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '36px Arial';
-      ctx.textAlign = 'center';
+      // ========================================
+      // PAUSE STATUS INDICATOR
+      // ========================================
+      // Display large "PAUSED" text for immediate status recognition
+      ctx.fillStyle = '#FFFFFF';           // White text for high visibility
+      ctx.font = '36px Arial';             // Large font for prominence
+      ctx.textAlign = 'center';            // Center-aligned text
       ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 30);
       
-      // Resume instruction based on input source
-      ctx.font = '20px Arial';
+      // ========================================
+      // INPUT-SPECIFIC RESUME INSTRUCTIONS
+      // ========================================
+      // Show appropriate resume instructions based on the current input method
+      ctx.font = '20px Arial'; // Medium font for instructions
+      
       if (inputSource.current === 'gamepad') {
+        // ========================================
+        // GAMEPAD RESUME INSTRUCTIONS
+        // ========================================
         ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + 20);
-        ctx.font = '16px Arial';
+        
+        // Gamepad fullscreen instruction
+        ctx.font = '16px Arial'; // Smaller font for secondary instructions
         ctx.fillText('Press Y Button to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
+        
       } else if (inputSource.current === 'touch') {
+        // ========================================
+        // TOUCH RESUME INSTRUCTIONS
+        // ========================================
         ctx.fillText('Tap to Resume', canvas.width / 2, canvas.height / 2 + 20);
-        ctx.font = '16px Arial';
+        
+        // Touch fullscreen instruction
+        ctx.font = '16px Arial'; // Smaller font for secondary instructions
         ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
+        
       } else {
+        // ========================================
+        // KEYBOARD RESUME INSTRUCTIONS
+        // ========================================
         ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 20);
-        ctx.font = '16px Arial';
+        
+        // Keyboard fullscreen instruction
+        ctx.font = '16px Arial'; // Smaller font for secondary instructions
         ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
       }
       
-      // Exit instruction
+      // ========================================
+      // INPUT-SPECIFIC EXIT INSTRUCTIONS
+      // ========================================
+      // Show appropriate exit instructions based on the current input method
       if (inputSource.current === 'touch') {
+        // Touch exit instruction
         ctx.font = '20px Arial';
         ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + 80);
+        
       } else if (inputSource.current === 'gamepad') {
+        // Gamepad exit instruction
         ctx.font = '20px Arial';
         ctx.fillText('Press B Button to Exit', canvas.width / 2, canvas.height / 2 + 80);
+        
       } else {
+        // Keyboard exit instruction
         ctx.font = '20px Arial';
         ctx.fillText('Press ESC to Exit', canvas.width / 2, canvas.height / 2 + 80);
       }
       
-      // Draw exit button for mobile devices
+      // ========================================
+      // MOBILE EXIT BUTTON RENDERING
+      // ========================================
+      // Draw a visible exit button for touch devices (mobile/tablet)
       if (inputSource.current === 'touch') {
-        // Exit button dimensions and position (top-left corner)
-        const buttonWidth = 80;
-        const buttonHeight = 40;
-        const buttonX = 20;
-        const buttonY = 20;
+        // Define exit button dimensions and position
+        const buttonWidth = 80;   // Button width in pixels
+        const buttonHeight = 40;  // Button height in pixels
+        const buttonX = 20;       // X position from left edge
+        const buttonY = 20;       // Y position from top edge
         
-        // Button background (more visible)
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+        // Draw button background with semi-transparent red color
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.8)'; // 80% opaque red background
         ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        // Button border (white for contrast)
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 3;
+        // Draw button border for definition and contrast
+        ctx.strokeStyle = '#FFFFFF'; // White border color
+        ctx.lineWidth = 3;           // 3px border thickness
         ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        // Button text (white for better visibility)
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
+        // Draw button text label
+        ctx.fillStyle = '#FFFFFF';        // White text for high contrast
+        ctx.font = 'bold 16px Arial';     // Bold font for button text
+        ctx.textAlign = 'center';         // Center-align text within button
+        // Position text in center of button (accounting for font baseline)
         ctx.fillText('EXIT', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 6);
       }
     };
     
     /**
-     * Main game loop that runs every animation frame
-     * Clears the canvas, draws all game elements, and updates the game state
+     * ========================================
+     * MAIN GAME LOOP
+     * ========================================
+     * 
+     * The core game loop that runs continuously using requestAnimationFrame.
+     * This function is called approximately 60 times per second to create smooth animation.
+     * 
+     * GAME STATE HANDLING:
+     * - 'start': Displays the start screen with instructions
+     * - 'playing': Renders active gameplay with all game objects and physics
+     * - 'paused': Shows the game in background with pause overlay
+     * 
+     * RENDERING ORDER (for 'playing' and 'paused' states):
+     * 1. Clear canvas with black background
+     * 2. Draw decorative frame border
+     * 3. Draw center net line
+     * 4. Draw game ball
+     * 5. Draw both paddles (player and computer)
+     * 6. Draw current score
+     * 7. Update game physics (playing state only)
+     * 8. Draw pause overlay (paused state only)
+     * 
+     * PERFORMANCE OPTIMIZATION:
+     * - Uses requestAnimationFrame for optimal frame timing
+     * - Only continues loop while game is active (prevents memory leaks)
+     * - Efficient canvas clearing and redrawing
      */
     const gameLoop = () => {
-      // Handle different game states
+      // ========================================
+      // GAME STATE ROUTING
+      // ========================================
+      // Handle rendering based on current game state
+      
       if (gameStateRef.current === 'start') {
+        // ========================================
+        // START SCREEN STATE
+        // ========================================
+        // Display the initial game screen with instructions
         drawStartScreen();
+        
       } else if (gameStateRef.current === 'playing') {
-        // Clear canvas with black background
+        // ========================================
+        // ACTIVE GAMEPLAY STATE
+        // ========================================
+        
+        // Clear the entire canvas with black background
+        // This removes all previous frame content for clean rendering
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw frame border
-        drawFrame();   // Draw the multi-layered frame
+        // Draw the decorative multi-layered frame border
+        drawFrame();
         
-        // Draw game elements
-        drawNet();     // Draw center line
-        drawBall();    // Draw the ball
-        drawPaddle(frameOffset, player1Y);  // Draw player paddle (left)
-        drawPaddle(frameOffset + gameWidth - paddleWidth, player2Y);  // Draw computer paddle (right)
-        drawScore();   // Draw current score
+        // Draw all game objects in proper layering order
+        drawNet();     // Center dashed line (background element)
+        drawBall();    // Game ball (moving object)
         
-        // Update game state for next frame
-        updateGame();
-      } else if (gameStateRef.current === 'paused') {
-        // Clear canvas with black background
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Draw both paddles with their current positions
+        drawPaddle(frameOffset, player1Y);  // Player paddle (left side)
+        drawPaddle(frameOffset + gameWidth - paddleWidth, player2Y);  // Computer paddle (right side)
         
-        // Draw frame border
-        drawFrame();   // Draw the multi-layered frame
-        
-        // Draw the game in the background
-        drawNet();
-        drawBall();
-        drawPaddle(frameOffset, player1Y);
-        drawPaddle(frameOffset + gameWidth - paddleWidth, player2Y);
+        // Draw the current score display
         drawScore();
         
-        // Draw pause overlay
+        // Update game physics and logic for the next frame
+        // This includes paddle movement, ball movement, collision detection, and scoring
+        updateGame();
+        
+      } else if (gameStateRef.current === 'paused') {
+        // ========================================
+        // PAUSED GAME STATE
+        // ========================================
+        
+        // Clear the entire canvas with black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw the decorative frame border
+        drawFrame();
+        
+        // Draw the game in the background (frozen state)
+        // This shows the current game state without updating physics
+        drawNet();     // Center line
+        drawBall();    // Ball at current position
+        drawPaddle(frameOffset, player1Y);                              // Player paddle
+        drawPaddle(frameOffset + gameWidth - paddleWidth, player2Y);    // Computer paddle
+        drawScore();   // Current score
+        
+        // Draw the pause overlay on top of the game
+        // This includes pause text, instructions, and exit button (mobile)
         drawPauseScreen();
       }
       
-      // Continue game loop by requesting next animation frame
+      // ========================================
+      // ANIMATION FRAME CONTINUATION
+      // ========================================
+      // Schedule the next frame of the game loop
+      // Only continue if the game is still active (prevents memory leaks on component unmount)
       if (isGameActive.current) {
-        requestAnimationFrame(gameLoop);
+        requestAnimationFrame(gameLoop); // Request next animation frame (~60fps)
       }
     };
     
