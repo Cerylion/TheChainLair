@@ -88,16 +88,21 @@ const Pong = () => {
     const paddleHeight = 100;  // Height of both paddles
     const paddleWidth = 10;    // Width of both paddles
     const ballRadius = 8;      // Radius of the ball
+    const frameOffset = 24;    // Frame border thickness on all sides
     
-    // Ball position and speed - Initial values
-    let ballX = canvas.width / 2;   // Start ball in horizontal center
-    let ballY = canvas.height / 2;  // Start ball in vertical center
-    let ballSpeedX = 5;             // Initial horizontal speed (positive = right)
-    let ballSpeedY = 3;             // Initial vertical speed (positive = down)
+    // Game area dimensions (excluding frame)
+    const gameWidth = canvas.width - (frameOffset * 2);   // 800px game area
+    const gameHeight = canvas.height - (frameOffset * 2); // 500px game area
     
-    // Paddle positions - Both paddles start in the middle vertically
-    let player1Y = (canvas.height - paddleHeight) / 2;  // Left paddle (player)
-    let player2Y = (canvas.height - paddleHeight) / 2;  // Right paddle (computer)
+    // Ball position and speed - Initial values (adjusted for frame)
+    let ballX = frameOffset + gameWidth / 2;   // Start ball in horizontal center of game area
+    let ballY = frameOffset + gameHeight / 2;  // Start ball in vertical center of game area
+    let ballSpeedX = 5;                        // Initial horizontal speed (positive = right)
+    let ballSpeedY = 3;                        // Initial vertical speed (positive = down)
+    
+    // Paddle positions - Both paddles start in the middle vertically (adjusted for frame)
+    let player1Y = frameOffset + (gameHeight - paddleHeight) / 2;  // Left paddle (player)
+    let player2Y = frameOffset + (gameHeight - paddleHeight) / 2;  // Right paddle (computer)
     
     // Score tracking
     let player1Score = 0;  // Player score
@@ -388,18 +393,45 @@ const Pong = () => {
       ctx.font = '24px Arial';
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'center';
-      ctx.fillText(player1Score, canvas.width / 4, 30);
-      ctx.fillText(player2Score, (canvas.width / 4) * 3, 30);
+      ctx.fillText(player1Score, frameOffset + gameWidth / 4, frameOffset + 30);
+      ctx.fillText(player2Score, frameOffset + (gameWidth / 4) * 3, frameOffset + 30);
+    };
+    
+    /**
+     * Draws the game frame border
+     * Creates a multi-layered border around the game area
+     */
+    const drawFrame = () => {
+      // Draw borders from outside to inside for proper layering
+      const borderLayers = [
+        { color: '#000000', width: 10, offset: 0 },   // Outer black layer
+        { color: '#808080', width: 8, offset: 10 },   // Middle grey layer  
+        { color: '#FFFFFF', width: 8, offset: 18 }    // Inner white layer
+      ];
+      
+      borderLayers.forEach(layer => {
+        ctx.strokeStyle = layer.color;
+        ctx.lineWidth = layer.width;
+        
+        // Calculate border position with proper offset
+        const x = layer.offset + layer.width / 2;
+        const y = layer.offset + layer.width / 2;
+        const width = canvas.width - (layer.offset + layer.width / 2) * 2;
+        const height = canvas.height - (layer.offset + layer.width / 2) * 2;
+        
+        // Draw border rectangle with clean, simple lines
+        ctx.strokeRect(x, y, width, height);
+      });
     };
     
     /**
      * Draws the center net line (dashed)
-     * Creates a vertical dashed line in the middle of the canvas
+     * Creates a vertical dashed line in the middle of the game area
      */
     const drawNet = () => {
-      for (let i = 0; i < canvas.height; i += 40) {
+      for (let i = frameOffset; i < frameOffset + gameHeight; i += 40) {
         ctx.beginPath();
-        ctx.rect(canvas.width / 2 - 1, i, 2, 20);
+        ctx.rect(frameOffset + gameWidth / 2 - 1, i, 2, 20);
         ctx.fillStyle = '#FFFFFF';
         ctx.fill();
         ctx.closePath();
@@ -562,10 +594,10 @@ const Pong = () => {
      */
     const updateGame = () => {
       // Move player paddle based on input (keyboard or gamepad)
-      if (upPressed && player1Y > 0) {
-        player1Y -= 7;  // Move paddle up if not at top edge
-      } else if (downPressed && player1Y < canvas.height - paddleHeight) {
-        player1Y += 7;  // Move paddle down if not at bottom edge
+      if (upPressed && player1Y > frameOffset) {
+        player1Y -= 7;  // Move paddle up if not at top edge of game area
+      } else if (downPressed && player1Y < frameOffset + gameHeight - paddleHeight) {
+        player1Y += 7;  // Move paddle down if not at bottom edge of game area
       }
       
       // Computer AI - Moves the right paddle to track the ball
@@ -576,17 +608,24 @@ const Pong = () => {
         player2Y += 5 * computerDifficulty;  // Move down at speed based on difficulty
       }
       
+      // Constrain computer paddle within game area bounds
+      if (player2Y < frameOffset) {
+        player2Y = frameOffset;
+      } else if (player2Y > frameOffset + gameHeight - paddleHeight) {
+        player2Y = frameOffset + gameHeight - paddleHeight;
+      }
+      
       // Ball movement - Update position based on current speed
       ballX += ballSpeedX;
       ballY += ballSpeedY;
       
-      // Ball collision with top and bottom walls - Reverse vertical direction
-      if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
+      // Ball collision with top and bottom walls of game area - Reverse vertical direction
+      if (ballY - ballRadius < frameOffset || ballY + ballRadius > frameOffset + gameHeight) {
         ballSpeedY = -ballSpeedY;
       }
       
       // Ball collision with player paddle (left)
-      if (ballX - ballRadius < paddleWidth && ballY > player1Y && ballY < player1Y + paddleHeight) {
+      if (ballX - ballRadius < frameOffset + paddleWidth && ballY > player1Y && ballY < player1Y + paddleHeight) {
         ballSpeedX = -ballSpeedX;  // Reverse horizontal direction
         // Change vertical speed based on where ball hits paddle (adds spin effect)
         const deltaY = ballY - (player1Y + paddleHeight / 2);
@@ -598,7 +637,7 @@ const Pong = () => {
       }
       
       // Ball collision with computer paddle (right)
-      if (ballX + ballRadius > canvas.width - paddleWidth && ballY > player2Y && ballY < player2Y + paddleHeight) {
+      if (ballX + ballRadius > frameOffset + gameWidth - paddleWidth && ballY > player2Y && ballY < player2Y + paddleHeight) {
         ballSpeedX = -ballSpeedX;  // Reverse horizontal direction
         // Change vertical speed based on where ball hits paddle (adds spin effect)
         const deltaY = ballY - (player2Y + paddleHeight / 2);
@@ -609,8 +648,8 @@ const Pong = () => {
         paddleHitSound.current.play();
       }
       
-      // Score points when ball passes paddles
-      if (ballX < 0) {
+      // Score points when ball passes paddles (outside game area)
+      if (ballX < frameOffset) {
         player2Score++;  // Computer scores a point
         
         // Play score sound
@@ -618,7 +657,7 @@ const Pong = () => {
   scoreSound.current.play();
         
         resetBall();     // Reset ball position
-      } else if (ballX > canvas.width) {
+      } else if (ballX > frameOffset + gameWidth) {
         player1Score++;  // Player scores a point
         
         // Play score sound
@@ -654,25 +693,7 @@ const Pong = () => {
           canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
           canvas.style.zIndex = '9999';
           
-          // Create SVG frame overlay
-          const frameOverlay = document.createElement('div');
-          frameOverlay.id = 'pong-frame-overlay';
-          frameOverlay.style.position = 'fixed';
-          frameOverlay.style.top = '50%';
-          frameOverlay.style.left = '50%';
-          frameOverlay.style.transform = `translate(-50%, -50%) scale(${scale})`;
-          frameOverlay.style.zIndex = '10000'; // Above canvas
-          frameOverlay.style.pointerEvents = 'none'; // Don't block interactions
-          frameOverlay.style.width = '800px';
-          frameOverlay.style.height = '500px';
-          frameOverlay.innerHTML = `
-            <svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="4" width="792" height="492" fill="none" stroke="#000000" stroke-width="8"/>
-              <rect x="12" y="12" width="776" height="476" fill="none" stroke="#808080" stroke-width="8"/>
-              <rect x="20" y="20" width="760" height="460" fill="none" stroke="#FFFFFF" stroke-width="8"/>
-            </svg>
-          `;
-          document.body.appendChild(frameOverlay);
+
           
           // Hide body overflow and all other page elements
           document.body.style.overflow = 'hidden';
@@ -680,15 +701,14 @@ const Pong = () => {
           // Hide all elements except the canvas by adding a fullscreen class to body
           document.body.classList.add('pong-fullscreen');
           
-          // Create and inject CSS to hide all elements except the canvas and frame overlay
+          // Create and inject CSS to hide all elements except the canvas
           const fullscreenStyle = document.createElement('style');
           fullscreenStyle.id = 'pong-fullscreen-style';
           fullscreenStyle.textContent = `
-            body.pong-fullscreen > *:not(canvas):not(#pong-frame-overlay) {
+            body.pong-fullscreen > *:not(canvas) {
               visibility: hidden !important;
             }
-            body.pong-fullscreen canvas,
-            body.pong-fullscreen #pong-frame-overlay {
+            body.pong-fullscreen canvas {
               visibility: visible !important;
             }
           `;
@@ -711,12 +731,6 @@ const Pong = () => {
           if (fullscreenStyle) {
             fullscreenStyle.remove();
           }
-          
-          // Remove frame overlay
-          const frameOverlay = document.getElementById('pong-frame-overlay');
-          if (frameOverlay) {
-            frameOverlay.remove();
-          }
         }
         
         return newFullscreenState;
@@ -728,9 +742,9 @@ const Pong = () => {
      * Reverses horizontal direction and randomizes vertical direction
      */
     const resetBall = () => {
-      ballX = canvas.width / 2;    // Center horizontally
-      ballY = canvas.height / 2;   // Center vertically
-      ballSpeedX = -ballSpeedX;    // Reverse horizontal direction
+      ballX = frameOffset + gameWidth / 2;    // Center horizontally in game area
+      ballY = frameOffset + gameHeight / 2;   // Center vertically in game area
+      ballSpeedX = -ballSpeedX;               // Reverse horizontal direction
       ballSpeedY = Math.random() * 6 - 3;  // Random vertical speed between -3 and 3
     };
     
@@ -842,40 +856,6 @@ const Pong = () => {
     };
     
     /**
-     * Draws the 3-layer border for fullscreen mode
-     */
-    const drawFullscreenBorder = () => {
-      if (!isFullscreenMode) return;
-      
-      // Clear any existing canvas effects/shadows
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      
-      // Draw borders from outside to inside for proper layering
-      const borderLayers = [
-        { color: '#000000', width: 10, offset: 0 },   // Outer black layer
-        { color: '#808080', width: 8, offset: 10 },   // Middle grey layer  
-        { color: '#FFFFFF', width: 8, offset: 18 }    // Inner white layer
-      ];
-      
-      borderLayers.forEach(layer => {
-        ctx.strokeStyle = layer.color;
-        ctx.lineWidth = layer.width;
-        
-        // Calculate border position with proper offset
-        const x = layer.offset + layer.width / 2;
-        const y = layer.offset + layer.width / 2;
-        const width = canvas.width - (layer.offset + layer.width / 2) * 2;
-        const height = canvas.height - (layer.offset + layer.width / 2) * 2;
-        
-        // Draw border rectangle with clean, simple lines
-        ctx.strokeRect(x, y, width, height);
-      });
-    };
-
-    /**
      * Main game loop that runs every animation frame
      * Clears the canvas, draws all game elements, and updates the game state
      */
@@ -888,21 +868,31 @@ const Pong = () => {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
+        // Draw frame border
+        drawFrame();   // Draw the multi-layered frame
+        
         // Draw game elements
         drawNet();     // Draw center line
         drawBall();    // Draw the ball
-        drawPaddle(0, player1Y);  // Draw player paddle (left)
-        drawPaddle(canvas.width - paddleWidth, player2Y);  // Draw computer paddle (right)
+        drawPaddle(frameOffset, player1Y);  // Draw player paddle (left)
+        drawPaddle(frameOffset + gameWidth - paddleWidth, player2Y);  // Draw computer paddle (right)
         drawScore();   // Draw current score
         
         // Update game state for next frame
         updateGame();
       } else if (gameStateRef.current === 'paused') {
+        // Clear canvas with black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw frame border
+        drawFrame();   // Draw the multi-layered frame
+        
         // Draw the game in the background
         drawNet();
         drawBall();
-        drawPaddle(0, player1Y);
-        drawPaddle(canvas.width - paddleWidth, player2Y);
+        drawPaddle(frameOffset, player1Y);
+        drawPaddle(frameOffset + gameWidth - paddleWidth, player2Y);
         drawScore();
         
         // Draw pause overlay
@@ -986,8 +976,8 @@ const Pong = () => {
       <div className="d-flex justify-content-center mb-4">
         <canvas 
           ref={canvasRef} 
-          width="800" 
-          height="500" 
+          width="848" 
+          height="548" 
           style={{ 
             background: '#000', 
             border: '2px solid #fff',
