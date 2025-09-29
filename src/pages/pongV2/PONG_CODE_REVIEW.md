@@ -238,13 +238,70 @@ const GAME_CONFIG = {
 ```
 **STATUS**: ✅ **COMPLETED** - All magic numbers have been extracted to GAME_CONFIG object
 
-### 2. Separate Input Handling
-**Current**: All input handling mixed in single useEffect
-**Recommendation**: Implement Mouse controller support (similar to mobile)
-- Left click to start game
-- click and drag to move paddle
-- same UI as mobile version (pause and exit buttons)
-- double click to enter/exit fullscreen mode
+### 2. ✅ Mouse Support Implementation - COMPLETED
+~~**Current**: All input handling mixed in single useEffect~~
+~~**Recommendation**: Implement Mouse controller support (similar to mobile)~~
+~~- Left click to start game~~
+~~- click and drag to move paddle~~
+~~- same UI as mobile version (pause and exit buttons)~~
+~~- double click to enter/exit fullscreen mode~~
+
+**STATUS**: ✅ **COMPLETED** - Full mouse support implemented with comprehensive functionality:
+
+**Features Implemented**:
+- ✅ **Left-click to start game**: Mouse clicks now start the game from any screen (start, pause, game over)
+- ✅ **Click-and-drag paddle movement**: Smooth paddle control with mouse drag gestures
+- ✅ **Pause/Exit button visibility**: Buttons now visible and functional with mouse input
+- ✅ **Double-click fullscreen toggle**: Double-click anywhere on canvas to enter/exit fullscreen mode
+- ✅ **Mouse interaction with UI elements**: Full support for pause and exit button interactions
+
+**Technical Implementation**:
+```javascript
+// Mouse event handlers added to PongV2.js
+const mouseDownHandler = (e) => {
+  // Coordinate transformation using existing touch utility
+  const { touchX, touchY } = transformTouchCoordinates(e, canvas, isFullscreenMode);
+  
+  // Set input source and handle interactions
+  inputSource.current = 'mouse';
+  // Button interactions, game state changes, paddle drag initialization
+};
+
+const mouseMoveHandler = (e) => {
+  // Paddle movement during drag with smooth tracking
+  if (gameStateRef.current === 'playing' && isMouseDragging.current) {
+    const deltaY = touchY - mouseStartY.current;
+    // Paddle position updates with constraints
+  }
+};
+
+const mouseUpHandler = (e) => {
+  // Clean up drag state
+  mouseStartY.current = null;
+  isMouseDragging.current = false;
+};
+
+const doubleClickHandler = (e) => {
+  // Fullscreen toggle functionality
+  toggleFullscreenMode();
+};
+```
+
+**UI Enhancements**:
+- Updated button visibility logic to include `inputSource.current === 'mouse'`
+- Modified instruction text from "Tap" to "Click" for mouse users
+- Updated pause screen text: "Double-click to enter/exit fullscreen"
+- Consistent UI behavior between touch and mouse input
+
+**Event Management**:
+- Mouse event listeners (`mousedown`, `mousemove`, `mouseup`, `dblclick`) added conditionally for desktop devices
+- Proper cleanup in useEffect to prevent memory leaks
+- Coordinate transformation reuses existing touch utility functions
+- Input source tracking maintains consistency across all input methods
+
+**Result**: Mouse support is now fully integrated with the same level of functionality as touch input. Users can play the entire game using only mouse controls, with intuitive click-and-drag paddle movement, visible UI buttons, and seamless fullscreen toggling. The implementation maintains code consistency by reusing existing coordinate transformation and UI logic.
+
+### 3. Separate Input Handling
 **Recommendation**: Create separate custom hooks:
 - `useKeyboardInput()`
 - `useGamepadInput()`
@@ -252,7 +309,7 @@ const GAME_CONFIG = {
 
 
 
-### 3. Extract Drawing Functions
+### 4. Extract Drawing Functions
 **Current**: All drawing functions defined inside useEffect
 **Recommendation**: Move drawing functions outside component or to separate module:
 ```javascript
@@ -263,7 +320,7 @@ const GameRenderer = {
 };
 ```
 
-### 4. Simplify State Management
+### 5. Simplify State Management
 **Current**: Mix of useState and useRef for similar purposes
 **Recommendation**: Use useReducer for game state management:
 ```javascript
@@ -277,7 +334,7 @@ const gameReducer = (state, action) => {
 };
 ```
 
-### 5. Extract Game Logic
+### 6. Extract Game Logic
 **Current**: Game physics and logic mixed with rendering
 **Recommendation**: Separate game engine from rendering:
 ```javascript
@@ -529,4 +586,14 @@ The refactoring should be done incrementally, starting with the high-priority it
 - **Exit Button Navigation Error**: Fixed router navigation issue that was causing application crashes
 - **Canvas Initialization Error**: Resolved variable scope and reference timing issues in useEffect cleanup function that were preventing proper canvas initialization
 
-**Current Status**: All high-priority refactoring items have been completed. The codebase now has significantly improved maintainability, reduced duplication, and enhanced functionality. The application runs without runtime errors and provides a better user experience.
+✅ **Mouse Support Implementation**: Successfully completed - implemented comprehensive mouse control functionality with full feature parity to touch input:
+- **Left-click to start game**: Mouse clicks now initiate gameplay from any screen state
+- **Click-and-drag paddle movement**: Smooth, responsive paddle control using mouse drag gestures
+- **UI button visibility and interaction**: Pause and exit buttons now visible and functional with mouse input
+- **Double-click fullscreen toggle**: Seamless fullscreen mode switching with double-click gesture
+- **Coordinate transformation reuse**: Leveraged existing touch coordinate utilities for consistent behavior
+- **Input source tracking**: Proper mouse input detection and state management
+- **Event management**: Clean mouse event listener setup and cleanup to prevent memory leaks
+- **UI text updates**: Updated instruction text from "Tap" to "Click" for appropriate mouse terminology
+
+**Current Status**: All high-priority refactoring items and the mouse support implementation have been completed. The codebase now has significantly improved maintainability, reduced duplication, enhanced functionality, and comprehensive input support across keyboard, gamepad, touch, and mouse. The application runs without runtime errors and provides an excellent user experience across all input methods.

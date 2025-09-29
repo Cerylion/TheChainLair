@@ -221,6 +221,12 @@ const Pong = () => {
   const lastTapTime = useRef(0);
   const doubleTapDelay = GAME_CONFIG.MOBILE.DOUBLE_TAP_DELAY;
   
+  // Mouse support refs
+  const mouseStartY = useRef(null);
+  const isMouseDragging = useRef(false);
+  const lastClickTime = useRef(0);
+  const doubleClickDelay = GAME_CONFIG.MOBILE.DOUBLE_TAP_DELAY; // Reuse the same delay
+  
   const [isFullscreenMode, setIsFullscreenMode] = useState(false);
   const paddleHitSound = useRef(null);
   const scoreSound = useRef(null);
@@ -467,6 +473,106 @@ const Pong = () => {
       upPressed = false;
       downPressed = false;
     };
+
+    // Mouse support handlers
+    const mouseDownHandler = (e) => {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Transform coordinates for fullscreen mode
+      const { touchX, touchY } = transformTouchCoordinates({ clientX: e.clientX, clientY: e.clientY }, canvas, isFullscreenMode);
+      
+      inputSource.current = 'mouse';
+      
+      // Double-click detection for fullscreen (using single clicks with timing)
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastClickTime.current;
+      
+      if (timeDiff < doubleClickDelay) {
+        toggleFullscreenMode();
+        lastClickTime.current = 0;
+        return;
+      }
+      
+      lastClickTime.current = currentTime;
+      
+      // Pause button interaction (playing state only)
+      if (gameStateRef.current === 'playing') {
+        const buttonBounds = getPauseButtonBounds();
+        
+        if (isPointInBounds({ x: touchX, y: touchY }, buttonBounds)) {
+          updateGameState('paused');
+          return;
+        }
+      }
+      
+      // Exit button interaction (pause state only)
+      if (gameStateRef.current === 'paused') {
+        const exitButtonBounds = {
+          x: GAME_CONFIG.UI.EXIT_BUTTON.X,
+          y: GAME_CONFIG.UI.EXIT_BUTTON.Y,
+          width: GAME_CONFIG.UI.EXIT_BUTTON.WIDTH,
+          height: GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT
+        };
+        
+        if (isPointInBounds({ x: touchX, y: touchY }, exitButtonBounds)) {
+          cleanupGame();
+          return;
+        }
+      }
+      
+      mouseStartY.current = touchY;
+      isMouseDragging.current = false;
+      
+      if (gameStateRef.current === 'start') {
+        updateGameState('playing');
+      } else if (gameStateRef.current === 'paused') {
+        updateGameState('playing');
+      }
+    };
+
+    const mouseMoveHandler = (e) => {
+      e.preventDefault();
+      
+      if (mouseStartY.current === null) return;
+      
+      const { touchY } = transformTouchCoordinates({ clientX: e.clientX, clientY: e.clientY }, canvas, isFullscreenMode);
+      
+      const moveThreshold = GAME_CONFIG.MOBILE.MOVE_THRESHOLD;
+      
+      if (Math.abs(touchY - mouseStartY.current) > moveThreshold) {
+        isMouseDragging.current = true;
+      }
+      
+      if (gameStateRef.current === 'playing' && isMouseDragging.current) {
+        const deltaY = touchY - mouseStartY.current;
+        const sensitivityMultiplier = GAME_CONFIG.MOBILE.SENSITIVITY;
+        const adjustedDeltaY = deltaY * sensitivityMultiplier;
+        const newPaddleY = player1Y + adjustedDeltaY;
+        
+        player1Y = constrainPaddle(newPaddleY, frameOffset, gameHeight, paddleHeight);
+        
+        mouseStartY.current = touchY;
+      }
+    };
+
+    const mouseUpHandler = (e) => {
+      e.preventDefault();
+      
+      mouseStartY.current = null;
+      isMouseDragging.current = false;
+      
+      upPressed = false;
+      downPressed = false;
+    };
+
+    const doubleClickHandler = (e) => {
+      e.preventDefault();
+      toggleFullscreenMode();
+    };
     
     // Helper function to calculate pause button position
     const getPauseButtonBounds = () => {
@@ -505,7 +611,7 @@ const Pong = () => {
     };
 
     const drawPauseButton = () => {
-      if (inputSource.current !== 'touch' || gameStateRef.current !== 'playing') return;
+      if ((inputSource.current !== 'touch' && inputSource.current !== 'mouse') || gameStateRef.current !== 'playing') return;
       
       const buttonBounds = getPauseButtonBounds();
       const cornerRadius = GAME_CONFIG.UI.CORNER_RADIUS;
@@ -850,10 +956,10 @@ const Pong = () => {
         
         drawText(ctx, 'Press Y Button to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE, '#FFFFFF');
         
-      } else if (inputSource.current === 'touch') {
-        drawText(ctx, 'Tap to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
+      } else if (inputSource.current === 'touch' || inputSource.current === 'mouse') {
+        drawText(ctx, 'Click to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
         
-        drawText(ctx, 'Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE, '#FFFFFF');
+        drawText(ctx, 'Double-click to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE, '#FFFFFF');
         
       } else {
         drawText(ctx, 'Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
@@ -861,8 +967,8 @@ const Pong = () => {
         drawText(ctx, 'Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE, '#FFFFFF');
       }
       
-      if (inputSource.current === 'touch') {
-        drawText(ctx, 'Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
+      if (inputSource.current === 'touch' || inputSource.current === 'mouse') {
+        drawText(ctx, 'Click Exit Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
         
       } else if (inputSource.current === 'gamepad') {
         drawText(ctx, 'Press B Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
@@ -871,8 +977,8 @@ const Pong = () => {
         drawText(ctx, 'Press ESC to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET, GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE, '#FFFFFF');
       }
       
-      // Mobile exit button
-      if (inputSource.current === 'touch') {
+      // Mobile/Mouse exit button
+      if (inputSource.current === 'touch' || inputSource.current === 'mouse') {
         const buttonWidth = GAME_CONFIG.UI.EXIT_BUTTON.WIDTH;
         const buttonHeight = GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT;
         const buttonX = GAME_CONFIG.UI.EXIT_BUTTON.X;
@@ -979,6 +1085,13 @@ const Pong = () => {
       canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
       canvas.addEventListener('touchend', touchEndHandler, { passive: false });
       console.log("Touch event listeners added for mobile device");
+    } else {
+      // Add mouse event listeners for desktop
+      canvas.addEventListener('mousedown', mouseDownHandler, { passive: false });
+      canvas.addEventListener('mousemove', mouseMoveHandler, { passive: false });
+      canvas.addEventListener('mouseup', mouseUpHandler, { passive: false });
+      canvas.addEventListener('dblclick', doubleClickHandler, { passive: false });
+      console.log("Mouse event listeners added for desktop device");
     }
     
     checkGamepads();
@@ -1005,6 +1118,12 @@ const Pong = () => {
         currentCanvas.removeEventListener('touchstart', touchStartHandler);
         currentCanvas.removeEventListener('touchmove', touchMoveHandler);
         currentCanvas.removeEventListener('touchend', touchEndHandler);
+      } else if (currentCanvas) {
+        // Remove mouse event listeners for desktop
+        currentCanvas.removeEventListener('mousedown', mouseDownHandler);
+        currentCanvas.removeEventListener('mousemove', mouseMoveHandler);
+        currentCanvas.removeEventListener('mouseup', mouseUpHandler);
+        currentCanvas.removeEventListener('dblclick', doubleClickHandler);
       }
       
       clearInterval(gamepadPollingInterval);
