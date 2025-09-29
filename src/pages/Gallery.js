@@ -245,16 +245,13 @@ const Gallery = () => {
           - key={work.id}: React key for efficient list rendering
         */}
         {filteredWorks.map(work => (
-          
-          {/* ========================================
-              INDIVIDUAL WORK COLUMN
-              ======================================== */}
-          {/* 
-            Bootstrap column for each gallery item
-            - Col md={4}: Medium+ screens use 4/12 columns (33.33% width, 3 per row)
-            - Responsive: stacks vertically on small screens
-            - key={work.id}: React key for efficient re-rendering
-          */}
+          // ========================================
+          // INDIVIDUAL WORK COLUMN
+          // ========================================
+          // Bootstrap column for each gallery item
+          // - Col md={4}: Medium+ screens use 4/12 columns (33.33% width, 3 per row)
+          // - Responsive: stacks vertically on small screens
+          // - key={work.id}: React key for efficient re-rendering
           <Col md={4} key={work.id}>
             
             {/* ========================================

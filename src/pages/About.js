@@ -393,17 +393,14 @@ const About = () => {
               - Responsive grid: md={3} (4 cards per row on medium+), sm={6} (2 per row on small)
             */}
             {['Byzantine', 'European 4-in-1', 'Persian', 'Japanese'].map((weave, index) => (
-              
-              {/* ========================================
-                  INDIVIDUAL WEAVE CARD COLUMN
-                  ======================================== */}
-              {/* 
-                Bootstrap column for each weave card
-                - Col md={3}: Medium+ screens use 3/12 columns (25% width, 4 per row)
-                - Col sm={6}: Small screens use 6/12 columns (50% width, 2 per row)
-                - key={index}: React key for efficient list rendering
-                - className="mb-4": Bootstrap utility for margin bottom (1.5rem)
-              */}
+              // ========================================
+              // INDIVIDUAL WEAVE CARD COLUMN
+              // ========================================
+              // Bootstrap column for each weave card
+              // - Col md={3}: Medium+ screens use 3/12 columns (25% width, 4 per row)
+              // - Col sm={6}: Small screens use 6/12 columns (50% width, 2 per row)
+              // - key={index}: React key for efficient list rendering
+              // - className="mb-4": Bootstrap utility for margin bottom (1.5rem)
               <Col md={3} sm={6} key={index} className="mb-4">
                 
                 {/* ========================================
