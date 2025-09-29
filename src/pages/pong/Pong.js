@@ -654,6 +654,26 @@ const Pong = () => {
           canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
           canvas.style.zIndex = '9999';
           
+          // Create SVG frame overlay
+          const frameOverlay = document.createElement('div');
+          frameOverlay.id = 'pong-frame-overlay';
+          frameOverlay.style.position = 'fixed';
+          frameOverlay.style.top = '50%';
+          frameOverlay.style.left = '50%';
+          frameOverlay.style.transform = `translate(-50%, -50%) scale(${scale})`;
+          frameOverlay.style.zIndex = '10000'; // Above canvas
+          frameOverlay.style.pointerEvents = 'none'; // Don't block interactions
+          frameOverlay.style.width = '800px';
+          frameOverlay.style.height = '500px';
+          frameOverlay.innerHTML = `
+            <svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="792" height="492" fill="none" stroke="#000000" stroke-width="8"/>
+              <rect x="12" y="12" width="776" height="476" fill="none" stroke="#808080" stroke-width="8"/>
+              <rect x="20" y="20" width="760" height="460" fill="none" stroke="#FFFFFF" stroke-width="8"/>
+            </svg>
+          `;
+          document.body.appendChild(frameOverlay);
+          
           // Hide body overflow and all other page elements
           document.body.style.overflow = 'hidden';
           
@@ -689,6 +709,12 @@ const Pong = () => {
           const fullscreenStyle = document.getElementById('pong-fullscreen-style');
           if (fullscreenStyle) {
             fullscreenStyle.remove();
+          }
+          
+          // Remove frame overlay
+          const frameOverlay = document.getElementById('pong-frame-overlay');
+          if (frameOverlay) {
+            frameOverlay.remove();
           }
         }
         
@@ -856,7 +882,6 @@ const Pong = () => {
       // Handle different game states
       if (gameStateRef.current === 'start') {
         drawStartScreen();
-        drawFullscreenBorder();
       } else if (gameStateRef.current === 'playing') {
         // Clear canvas with black background
         ctx.fillStyle = '#000000';
@@ -868,7 +893,6 @@ const Pong = () => {
         drawPaddle(0, player1Y);  // Draw player paddle (left)
         drawPaddle(canvas.width - paddleWidth, player2Y);  // Draw computer paddle (right)
         drawScore();   // Draw current score
-        drawFullscreenBorder(); // Draw border if in fullscreen mode
         
         // Update game state for next frame
         updateGame();
@@ -879,7 +903,6 @@ const Pong = () => {
         drawPaddle(0, player1Y);
         drawPaddle(canvas.width - paddleWidth, player2Y);
         drawScore();
-        drawFullscreenBorder(); // Draw border if in fullscreen mode
         
         // Draw pause overlay
         drawPauseScreen();
