@@ -654,8 +654,24 @@ const Pong = () => {
           canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
           canvas.style.zIndex = '9999';
           
-          // Hide body overflow
+          // Hide body overflow and all other page elements
           document.body.style.overflow = 'hidden';
+          
+          // Hide all elements except the canvas by adding a fullscreen class to body
+          document.body.classList.add('pong-fullscreen');
+          
+          // Create and inject CSS to hide all elements except the canvas
+          const fullscreenStyle = document.createElement('style');
+          fullscreenStyle.id = 'pong-fullscreen-style';
+          fullscreenStyle.textContent = `
+            body.pong-fullscreen > *:not(canvas) {
+              visibility: hidden !important;
+            }
+            body.pong-fullscreen canvas {
+              visibility: visible !important;
+            }
+          `;
+          document.head.appendChild(fullscreenStyle);
           
         } else {
           // Reset canvas style to original
@@ -667,6 +683,13 @@ const Pong = () => {
           
           // Restore body overflow
           document.body.style.overflow = '';
+          
+          // Remove fullscreen class and styles
+          document.body.classList.remove('pong-fullscreen');
+          const fullscreenStyle = document.getElementById('pong-fullscreen-style');
+          if (fullscreenStyle) {
+            fullscreenStyle.remove();
+          }
         }
         
         return newFullscreenState;
@@ -798,9 +821,9 @@ const Pong = () => {
       if (!isFullscreenMode) return;
       
       const borderLayers = [
-        { color: '#FFFFFF', width: 5 }, // Outer white layer
+        { color: '#FFFFFF', width: 5 }, // Inner white layer
         { color: '#808080', width: 5 }, // Middle paddle grey layer  
-        { color: '#FFFFFF', width: 5 }  // Inner white layer
+        { color: '#000000', width: 5 }  // Outer black layer
       ];
       
       let currentOffset = 0;
