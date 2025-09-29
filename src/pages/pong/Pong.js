@@ -405,8 +405,8 @@ const Pong = () => {
       // Draw borders from outside to inside for proper layering
       const borderLayers = [
         { color: '#000000', width: 10, offset: 0 },   // Outer black layer
-        { color: '#808080', width: 8, offset: 10 },   // Middle grey layer  
-        { color: '#FFFFFF', width: 8, offset: 18 }    // Inner white layer
+        { color: '#FFFFFF', width: 8, offset: 10 },   // Middle white layer  
+        { color: '#808080', width: 8, offset: 18 }    // Inner grey layer
       ];
       
       borderLayers.forEach(layer => {
@@ -980,7 +980,6 @@ const Pong = () => {
           height="548" 
           style={{ 
             background: '#000', 
-            border: '2px solid #fff',
             maxWidth: '100%'
           }}
         />
