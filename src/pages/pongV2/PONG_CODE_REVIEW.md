@@ -44,6 +44,18 @@
   - Now relies solely on native browser `dblclick` event for fullscreen toggle
   - **Result**: Double-click fullscreen functionality now works smoothly without flash behavior
 
+## ✅ COMPLETED - Audio Management Extraction
+- **Description**: Successfully extracted audio management logic into a reusable custom hook
+- **Impact**: Improved code organization, maintainability, and separation of concerns
+- **Implementation**: **COMPLETED** - Created comprehensive audio management system:
+  - Created `useAudioManager()` custom hook in `/hooks/useAudioManager.js`
+  - Extracted audio initialization logic from main component's useEffect
+  - Implemented centralized sound effect management with error handling
+  - Added `playPaddleHitSound()`, `playScoreSound()`, and `stopAllSounds()` functions
+  - Integrated hook into main PongV2 component, replacing all direct audio references
+  - Updated cleanup logic to use centralized `stopAllSounds()` function
+  - **Result**: Audio functionality is now properly encapsulated, reusable, and maintainable with cleaner API
+
 ## Executive Summary
 This document provides a comprehensive analysis of the Pong.js codebase, identifying areas for improvement, code duplication, simplification opportunities, and performance optimizations. The current implementation is functional but contains several areas that could benefit from refactoring.
 
@@ -64,7 +76,7 @@ This document provides a comprehensive analysis of the Pong.js codebase, identif
 
 ## Duplicate Code & Patterns
 
-### 1. ✅ Repetitive Sound Management - COMPLETED
+### 1. ✅ Repetitive Sound Management - COMPLETED & ENHANCED
 ~~**Location**: Lines 590-598, 604-606~~
 ~~```javascript~~
 ~~// Pattern repeated multiple times:~~
@@ -76,7 +88,9 @@ This document provides a comprehensive analysis of the Pong.js codebase, identif
 ~~```~~
 ~~**Recommendation**: Create a `playSound(soundRef)` utility function.~~
 
-**STATUS**: ✅ **COMPLETED** - Sound utility functions implemented:
+**STATUS**: ✅ **COMPLETED & ENHANCED** - Full audio management extraction implemented:
+
+**Phase 1 - Utility Functions** (Previously completed):
 ```javascript
 // Utility functions added to PongV2.js
 const playSound = (sound) => {
@@ -94,7 +108,22 @@ const stopSound = (sound) => {
   }
 };
 ```
-**Result**: Eliminated code duplication by replacing all repetitive sound management patterns with utility function calls, improving maintainability and following DRY principles.
+
+**Phase 2 - Custom Hook Extraction** (NEW - Just completed):
+```javascript
+// Created useAudioManager() custom hook in /hooks/useAudioManager.js
+const useAudioManager = () => {
+  const paddleHitSound = useRef(null);
+  const scoreSound = useRef(null);
+
+  // Audio initialization, error handling, and cleanup logic
+  // Provides: playPaddleHitSound(), playScoreSound(), stopAllSounds()
+};
+```
+
+**Result**: 
+- **Phase 1**: Eliminated code duplication with utility functions
+- **Phase 2**: Extracted entire audio system into reusable custom hook with proper separation of concerns, centralized error handling, and cleaner API. Audio logic is now completely isolated from the main game component.
 
 ### 2. ✅ Coordinate Transformation Logic - COMPLETED
 ~~**Location**: Lines 175-214 (touchStartHandler), 266-306 (touchMoveHandler)~~
