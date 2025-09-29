@@ -1,5 +1,10 @@
 # Pong.js Code Review & Improvement Analysis
 
+## New Found Bug - screen not showing anything when navigating "back" on the browser while game is on fullscreen mode
+- **Description**: The full screen becomes blank when navigating away from the game to another page while in fullscreen mode.
+- **Impact**: Users cannot resume game or see anything on the site without refreshing the page.
+- **Root Cause**: The game's fullscreen mode is not properly exited when the browser tab is lost.
+
 ## Executive Summary
 This document provides a comprehensive analysis of the Pong.js codebase, identifying areas for improvement, code duplication, simplification opportunities, and performance optimizations. The current implementation is functional but contains several areas that could benefit from refactoring.
 
@@ -81,9 +86,10 @@ ctx.fillText(text, x, y);
 ## Code Simplification Opportunities
 
 ### 1. Extract Game Configuration
-**Current**: Magic numbers scattered throughout code
-**Recommendation**: Create configuration object at top of component:
+~~**Current**: Magic numbers scattered throughout code~~
+~~**Recommendation**: Create configuration object at top of component:~~
 ```javascript
+// ✅ COMPLETED - GAME_CONFIG object implemented in PongV2.js
 const GAME_CONFIG = {
   PADDLE: { WIDTH: 10, HEIGHT: 100, SPEED: 7 },
   BALL: { RADIUS: 8, INITIAL_SPEED_X: 5, INITIAL_SPEED_Y: 3 },
@@ -92,13 +98,21 @@ const GAME_CONFIG = {
   UI: { PAUSE_BUTTON_SIZE: 60, SCORE_FONT_SIZE: 48 }
 };
 ```
+**STATUS**: ✅ **COMPLETED** - All magic numbers have been extracted to GAME_CONFIG object
 
 ### 2. Separate Input Handling
 **Current**: All input handling mixed in single useEffect
+**Recommendation**: Implement Mouse controller support (similar to mobile)
+- Left click to start game
+- click and drag to move paddle
+- same UI as mobile version (pause and exit buttons)
+- double click to enter/exit fullscreen mode
 **Recommendation**: Create separate custom hooks:
 - `useKeyboardInput()`
 - `useGamepadInput()`
 - `useTouchInput()`
+
+
 
 ### 3. Extract Drawing Functions
 **Current**: All drawing functions defined inside useEffect
@@ -203,7 +217,8 @@ export const useGameEngine = (gameState, config) => {
 
 ### 3. Configuration Management
 ```javascript
-// constants.js
+// ✅ COMPLETED - Implemented in PongV2.js
+// constants.js - GAME_CONFIG object with comprehensive configuration
 export const GAME_CONFIG = {
   CANVAS: { WIDTH: 848, HEIGHT: 548 },
   PADDLE: { WIDTH: 10, HEIGHT: 100, SPEED: 7 },
@@ -213,12 +228,14 @@ export const GAME_CONFIG = {
   MOBILE: { SENSITIVITY: 2.5, DOUBLE_TAP_DELAY: 300 }
 };
 ```
+**STATUS**: ✅ **COMPLETED** - Comprehensive GAME_CONFIG object implemented
 
 ## Code Quality Issues
 
 ### 1. Magic Numbers
-- Hardcoded values throughout (75, 48, 5, 60, etc.)
-- Should be extracted to constants
+~~- Hardcoded values throughout (75, 48, 5, 60, etc.)~~
+~~- Should be extracted to constants~~
+**STATUS**: ✅ **COMPLETED** - All magic numbers extracted to GAME_CONFIG object
 
 ### 2. Long Functions
 - `touchStartHandler` (89 lines)
@@ -257,7 +274,7 @@ export const GAME_CONFIG = {
 ## Implementation Priority
 
 ### High Priority (Immediate Impact)
-1. **Extract Configuration Constants** - Easy win, improves maintainability
+1. ~~**Extract Configuration Constants** - Easy win, improves maintainability~~ - **COMPLETED** ✅
 2. **Create Sound Utility Functions** - Reduces duplication
 3. **Extract Coordinate Transformation Logic** - Simplifies touch handling
 4. **Break Down Large Functions** - Improves readability
@@ -276,22 +293,25 @@ export const GAME_CONFIG = {
 
 ## Estimated Refactoring Effort
 
-- **Phase 1** (Constants & Utilities): 2-3 hours
+- ~~**Phase 1** (Constants & Utilities): 2-3 hours~~ ✅ **COMPLETED** (Configuration Constants)
 - **Phase 2** (Function Extraction): 4-5 hours  
 - **Phase 3** (State Management): 3-4 hours
 - **Phase 4** (Component Decomposition): 6-8 hours
 - **Phase 5** (Performance Optimization): 4-6 hours
 
-**Total Estimated Effort**: 19-26 hours
+**Total Estimated Effort**: ~~19-26 hours~~ **16-23 hours** (Updated after Phase 1 completion)
 
 ## Conclusion
 
 The Pong.js implementation is functional and feature-rich but would benefit significantly from refactoring. The main areas for improvement are:
 
-1. **Code Organization**: Breaking down the monolithic structure
+1. ~~**Code Organization**: Breaking down the monolithic structure~~
 2. **Duplication Removal**: Extracting common patterns into utilities
-3. **Configuration Management**: Centralizing magic numbers and settings
+3. ~~**Configuration Management**: Centralizing magic numbers and settings~~ ✅ **COMPLETED**
 4. **State Management**: Using more appropriate React patterns
 5. **Performance**: Optimizing rendering and event handling
 
 The refactoring should be done incrementally, starting with the high-priority items that provide immediate benefits with minimal risk.
+
+## Progress Update
+✅ **Configuration Constants Extraction**: Successfully completed - all magic numbers have been centralized into a comprehensive GAME_CONFIG object, improving maintainability and making the codebase more configurable.

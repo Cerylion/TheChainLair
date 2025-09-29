@@ -5,6 +5,117 @@ import { Link } from 'react-router-dom';
 import PADDLE_HIT_SOUND from './assets/sounds/bip.mp3';
 import SCORE_SOUND from './assets/sounds/score.mp3';
 
+// Game Configuration Constants
+const GAME_CONFIG = {
+  CANVAS: {
+    WIDTH: 848,
+    HEIGHT: 548,
+    MAX_WIDTH: '100%'
+  },
+  PADDLE: {
+    WIDTH: 10,
+    HEIGHT: 100,
+    SPEED: 7,
+    COMPUTER_SPEED: 5
+  },
+  BALL: {
+    RADIUS: 8,
+    INITIAL_SPEED_X: 5,
+    INITIAL_SPEED_Y: 3,
+    SPEED_MULTIPLIER: 0.35,
+    RANDOM_SPEED_RANGE: 6
+  },
+  FRAME: {
+    OFFSET: 24,
+    LAYERS: [
+      { color: '#000000', width: 10, offset: 0 },
+      { color: '#FFFFFF', width: 8, offset: 10 },
+      { color: '#808080', width: 8, offset: 18 }
+    ]
+  },
+  COMPUTER: {
+    DIFFICULTY: 0.85
+  },
+  UI: {
+    PAUSE_BUTTON_SIZE: 60,
+    PAUSE_BUTTON_OFFSET: 15,
+    EXIT_BUTTON: {
+      WIDTH: 80,
+      HEIGHT: 40,
+      X: 20,
+      Y: 20
+    },
+    SCORE: {
+      FONT_SIZE: 48,
+      Y_POSITION: 75
+    },
+    PAUSE_BARS: {
+      WIDTH: 8,
+      HEIGHT: 28,
+      SPACING: 10,
+      CORNER_RADIUS: 2
+    },
+    CORNER_RADIUS: 12,
+    LINE_WIDTH: 3,
+    START_SCREEN: {
+      TITLE_FONT_SIZE: 48,
+      SUBTITLE_FONT_SIZE: 24,
+      INSTRUCTION_FONT_SIZE: 18,
+      TITLE_Y_OFFSET: 3, // canvas.height / 3
+      SUBTITLE_Y_OFFSET: 2, // canvas.height / 2
+      INSTRUCTION_LINE_SPACING: 30
+    },
+    PAUSE_SCREEN: {
+      TITLE_FONT_SIZE: 36,
+      FONT_SIZE: 20,
+      INSTRUCTION_FONT_SIZE: 16,
+      Y_OFFSET: 80,
+      TITLE_Y_OFFSET: -30,
+      RESUME_Y_OFFSET: 20,
+      FULLSCREEN_Y_OFFSET: 50
+    }
+  },
+  MOBILE: {
+    SENSITIVITY: 2.5,
+    DOUBLE_TAP_DELAY: 300,
+    MOVE_THRESHOLD: 3,
+    PADDING: 10
+  },
+  DESKTOP: {
+    PADDING: 20
+  },
+  GAMEPAD: {
+    POLLING_INTERVAL: 16,
+    STICK_THRESHOLD: 0.2,
+    BUTTON_INDICES: {
+      SOUTH: 0,
+      EAST: 1,
+      NORTH: 3,
+      DPAD_UP: 12,
+      DPAD_DOWN: 13
+    },
+    AXES: {
+      LEFT_STICK_Y: 1
+    }
+  },
+  GAME: {
+    CENTER_LINE: {
+      DASH_LENGTH: 20,
+      DASH_SPACING: 40,
+      WIDTH: 2
+    },
+    INITIAL_SCORES: 0,
+    RESET_DELAY: 0
+  },
+  COLORS: {
+    BACKGROUND: '#000000',
+    FOREGROUND: '#FFFFFF',
+    PAUSE_OVERLAY: 'rgba(0, 0, 0, 0.5)',
+    EXIT_BUTTON: 'rgba(255, 0, 0, 0.8)',
+    FRAME_SHADOW: 'rgba(255, 255, 255, 0.1)'
+  }
+};
+
 const Pong = () => {
   const canvasRef = useRef(null);
   const [gamepadConnected, setGamepadConnected] = useState(false);
@@ -18,7 +129,7 @@ const Pong = () => {
   const touchStartY = useRef(null);
   const isDragging = useRef(false);
   const lastTapTime = useRef(0);
-  const doubleTapDelay = 300;
+  const doubleTapDelay = GAME_CONFIG.MOBILE.DOUBLE_TAP_DELAY;
   
   const [isFullscreenMode, setIsFullscreenMode] = useState(false);
   const paddleHitSound = useRef(null);
@@ -54,24 +165,24 @@ const Pong = () => {
     const ctx = canvas.getContext('2d');
     let gamepadPollingInterval;
     
-    const paddleHeight = 100;
-    const paddleWidth = 10;
-    const ballRadius = 8;
-    const frameOffset = 24;
+    const paddleHeight = GAME_CONFIG.PADDLE.HEIGHT;
+    const paddleWidth = GAME_CONFIG.PADDLE.WIDTH;
+    const ballRadius = GAME_CONFIG.BALL.RADIUS;
+    const frameOffset = GAME_CONFIG.FRAME.OFFSET;
     
     const gameWidth = canvas.width - (frameOffset * 2);
     const gameHeight = canvas.height - (frameOffset * 2);
     
     let ballX = frameOffset + gameWidth / 2;
     let ballY = frameOffset + gameHeight / 2;
-    let ballSpeedX = 5;
-    let ballSpeedY = 3;
+    let ballSpeedX = GAME_CONFIG.BALL.INITIAL_SPEED_X;
+    let ballSpeedY = GAME_CONFIG.BALL.INITIAL_SPEED_Y;
     
     let player1Y = frameOffset + (gameHeight - paddleHeight) / 2;
     let player2Y = frameOffset + (gameHeight - paddleHeight) / 2;
     
-    let player1Score = 0;
-    let player2Score = 0;
+    let player1Score = GAME_CONFIG.GAME.INITIAL_SCORES;
+    let player2Score = GAME_CONFIG.GAME.INITIAL_SCORES;
     
     let upPressed = false;
     let downPressed = false;
@@ -79,7 +190,7 @@ const Pong = () => {
     let gamepads = {};
     let gamepadIndex = null;
     
-    const computerDifficulty = 0.85;
+    const computerDifficulty = GAME_CONFIG.COMPUTER.DIFFICULTY;
     
     const gamepadConnectHandler = (e) => {
       console.log("Gamepad connected:", e.gamepad.id);
@@ -240,10 +351,10 @@ const Pong = () => {
       
       // Exit button interaction (pause state only)
       if (gameStateRef.current === 'paused') {
-        const buttonWidth = 80;
-        const buttonHeight = 40;
-        const buttonX = 20;
-        const buttonY = 20;
+        const buttonWidth = GAME_CONFIG.UI.EXIT_BUTTON.WIDTH;
+        const buttonHeight = GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT;
+        const buttonX = GAME_CONFIG.UI.EXIT_BUTTON.X;
+        const buttonY = GAME_CONFIG.UI.EXIT_BUTTON.Y;
         
         if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
             touchY >= buttonY && touchY <= buttonY + buttonHeight) {
@@ -278,7 +389,7 @@ const Pong = () => {
         touchY = touchY / scaleY;
       }
       
-      const moveThreshold = 3;
+      const moveThreshold = GAME_CONFIG.MOBILE.MOVE_THRESHOLD;
       
       if (Math.abs(touchY - touchStartY.current) > moveThreshold) {
         isDragging.current = true;
@@ -286,7 +397,7 @@ const Pong = () => {
       
       if (gameStateRef.current === 'playing' && isDragging.current) {
         const deltaY = touchY - touchStartY.current;
-        const sensitivityMultiplier = 2.5; // Increased sensitivity for better responsiveness
+        const sensitivityMultiplier = GAME_CONFIG.MOBILE.SENSITIVITY;
         const adjustedDeltaY = deltaY * sensitivityMultiplier;
         const newPaddleY = player1Y + adjustedDeltaY;
         
@@ -317,9 +428,9 @@ const Pong = () => {
     
     // Helper function to calculate pause button position
     const getPauseButtonBounds = () => {
-      const buttonSize = 60;
-      const buttonX = frameOffset + gameWidth - buttonSize - 15;
-      const buttonY = 75 - 48 + 5; // Align with top of score text (75 - font height + small offset)
+      const buttonSize = GAME_CONFIG.UI.PAUSE_BUTTON_SIZE;
+      const buttonX = frameOffset + gameWidth - buttonSize - GAME_CONFIG.UI.PAUSE_BUTTON_OFFSET;
+      const buttonY = GAME_CONFIG.UI.SCORE.Y_POSITION - GAME_CONFIG.UI.SCORE.FONT_SIZE + 5; // Align with top of score text
       
       return {
         x: buttonX,
@@ -333,7 +444,7 @@ const Pong = () => {
     const drawBall = () => {
       ctx.beginPath();
       ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
       ctx.fill();
       ctx.closePath();
     };
@@ -341,25 +452,25 @@ const Pong = () => {
     const drawPaddle = (x, y) => {
       ctx.beginPath();
       ctx.rect(x, y, paddleWidth, paddleHeight);
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
       ctx.fill();
       ctx.closePath();
     };
     
     const drawScore = () => {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '48px Arial';
+      ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
+      ctx.font = `${GAME_CONFIG.UI.SCORE.FONT_SIZE}px Arial`;
       ctx.textAlign = 'center';
       
-      ctx.fillText(player1Score, frameOffset + gameWidth / 4, 75);
-      ctx.fillText(player2Score, frameOffset + (3 * gameWidth) / 4, 75);
+      ctx.fillText(player1Score, frameOffset + gameWidth / 4, GAME_CONFIG.UI.SCORE.Y_POSITION);
+      ctx.fillText(player2Score, frameOffset + (3 * gameWidth) / 4, GAME_CONFIG.UI.SCORE.Y_POSITION);
     };
 
     const drawPauseButton = () => {
       if (inputSource.current !== 'touch' || gameStateRef.current !== 'playing') return;
       
       const buttonBounds = getPauseButtonBounds();
-      const cornerRadius = 12;
+      const cornerRadius = GAME_CONFIG.UI.CORNER_RADIUS;
       
       // Draw rounded rectangle background
       ctx.beginPath();
@@ -375,39 +486,35 @@ const Pong = () => {
       ctx.closePath();
       
       // Button background (semi-transparent)
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.fillStyle = GAME_CONFIG.COLORS.FRAME_SHADOW;
       ctx.fill();
       
       // Button border
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = GAME_CONFIG.COLORS.FOREGROUND;
+      ctx.lineWidth = GAME_CONFIG.UI.LINE_WIDTH;
       ctx.stroke();
       
       // Pause symbol (two vertical bars)
-      ctx.fillStyle = '#FFFFFF';
-      const barWidth = 8;
-      const barHeight = 28;
-      const barSpacing = 10;
+      ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
+      const barWidth = GAME_CONFIG.UI.PAUSE_BARS.WIDTH;
+      const barHeight = GAME_CONFIG.UI.PAUSE_BARS.HEIGHT;
+      const barSpacing = GAME_CONFIG.UI.PAUSE_BARS.SPACING;
       const startX = buttonBounds.x + (buttonBounds.width - (2 * barWidth + barSpacing)) / 2;
       const startY = buttonBounds.y + (buttonBounds.height - barHeight) / 2;
       
       // Left bar with rounded edges
       ctx.beginPath();
-      ctx.roundRect(startX, startY, barWidth, barHeight, 2);
+      ctx.roundRect(startX, startY, barWidth, barHeight, GAME_CONFIG.UI.PAUSE_BARS.CORNER_RADIUS);
       ctx.fill();
       
       // Right bar with rounded edges
       ctx.beginPath();
-      ctx.roundRect(startX + barWidth + barSpacing, startY, barWidth, barHeight, 2);
+      ctx.roundRect(startX + barWidth + barSpacing, startY, barWidth, barHeight, GAME_CONFIG.UI.PAUSE_BARS.CORNER_RADIUS);
       ctx.fill();
     };
     
     const drawFrame = () => {
-      const borderLayers = [
-        { color: '#000000', width: 10, offset: 0 },
-        { color: '#FFFFFF', width: 8, offset: 10 },
-        { color: '#808080', width: 8, offset: 18 }
-      ];
+      const borderLayers = GAME_CONFIG.FRAME.LAYERS;
       
       borderLayers.forEach(layer => {
         ctx.strokeStyle = layer.color;
@@ -423,10 +530,10 @@ const Pong = () => {
     };
     
     const drawNet = () => {
-      for (let i = frameOffset; i < frameOffset + gameHeight; i += 40) {
+      for (let i = frameOffset; i < frameOffset + gameHeight; i += GAME_CONFIG.GAME.CENTER_LINE.DASH_SPACING) {
         ctx.beginPath();
-        ctx.rect(frameOffset + gameWidth / 2 - 1, i, 2, 20);
-        ctx.fillStyle = '#FFFFFF';
+        ctx.rect(frameOffset + gameWidth / 2 - GAME_CONFIG.GAME.CENTER_LINE.WIDTH / 2, i, GAME_CONFIG.GAME.CENTER_LINE.WIDTH, GAME_CONFIG.GAME.CENTER_LINE.DASH_LENGTH);
+        ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
         ctx.fill();
         ctx.closePath();
       }
@@ -448,24 +555,24 @@ const Pong = () => {
       
       updateGameState('start');
       
-      player1Score = 0;
-      player2Score = 0;
+      player1Score = GAME_CONFIG.GAME.INITIAL_SCORES;
+      player2Score = GAME_CONFIG.GAME.INITIAL_SCORES;
       
       setTimeout(() => {
         const goBack = () => {
           window.history.back();
         };
-        setTimeout(goBack, 0);
-      }, 0);
+        setTimeout(goBack, GAME_CONFIG.GAME.RESET_DELAY);
+      }, GAME_CONFIG.GAME.RESET_DELAY);
     };
     
     const pollGamepad = () => {
       if (gamepadIndex !== null) {
         const gamepad = navigator.getGamepads()[gamepadIndex];
         if (gamepad) {
-          const southButtonPressed = gamepad.buttons[0].pressed;
-          const eastButtonPressed = gamepad.buttons[1].pressed;
-          const northButtonPressed = gamepad.buttons[3].pressed;
+          const southButtonPressed = gamepad.buttons[GAME_CONFIG.GAMEPAD.BUTTON_INDICES.SOUTH].pressed;
+          const eastButtonPressed = gamepad.buttons[GAME_CONFIG.GAMEPAD.BUTTON_INDICES.EAST].pressed;
+          const northButtonPressed = gamepad.buttons[GAME_CONFIG.GAMEPAD.BUTTON_INDICES.NORTH].pressed;
           
           if (northButtonPressed) {
             if (!lastNorthButtonStateRef.current) {
@@ -502,11 +609,11 @@ const Pong = () => {
             lastSouthButtonStateRef.current = false;
           }
           
-          const leftStickY = gamepad.axes[1];
-          const dpadUp = gamepad.buttons[12].pressed;
-          const dpadDown = gamepad.buttons[13].pressed;
+          const leftStickY = gamepad.axes[GAME_CONFIG.GAMEPAD.AXES.LEFT_STICK_Y];
+          const dpadUp = gamepad.buttons[GAME_CONFIG.GAMEPAD.BUTTON_INDICES.DPAD_UP].pressed;
+          const dpadDown = gamepad.buttons[GAME_CONFIG.GAMEPAD.BUTTON_INDICES.DPAD_DOWN].pressed;
           
-          const hasGamepadInput = dpadUp || dpadDown || Math.abs(leftStickY) > 0.2;
+          const hasGamepadInput = dpadUp || dpadDown || Math.abs(leftStickY) > GAME_CONFIG.GAMEPAD.STICK_THRESHOLD;
           
           if (gameStateRef.current === 'start' && (hasGamepadInput || southButtonPressed)) {
             console.log("Starting game from gamepad input");
@@ -517,10 +624,10 @@ const Pong = () => {
             if (hasGamepadInput) {
               inputSource.current = 'gamepad';
               
-              if (dpadUp || leftStickY < -0.2) {
+              if (dpadUp || leftStickY < -GAME_CONFIG.GAMEPAD.STICK_THRESHOLD) {
                 upPressed = true;
                 downPressed = false;
-              } else if (dpadDown || leftStickY > 0.2) {
+              } else if (dpadDown || leftStickY > GAME_CONFIG.GAMEPAD.STICK_THRESHOLD) {
                 downPressed = true;
                 upPressed = false;
               } else {
@@ -574,7 +681,7 @@ const Pong = () => {
       if (ballX - ballRadius < frameOffset + paddleWidth && ballY > player1Y && ballY < player1Y + paddleHeight) {
         ballSpeedX = -ballSpeedX;
         const deltaY = ballY - (player1Y + paddleHeight / 2);
-        ballSpeedY = deltaY * 0.35;
+        ballSpeedY = deltaY * GAME_CONFIG.BALL.SPEED_MULTIPLIER;
         
         paddleHitSound.current.currentTime = 0;
         paddleHitSound.current.play();
@@ -584,7 +691,7 @@ const Pong = () => {
       if (ballX + ballRadius > frameOffset + gameWidth - paddleWidth && ballY > player2Y && ballY < player2Y + paddleHeight) {
         ballSpeedX = -ballSpeedX;
         const deltaY = ballY - (player2Y + paddleHeight / 2);
-        ballSpeedY = deltaY * 0.35;
+        ballSpeedY = deltaY * GAME_CONFIG.BALL.SPEED_MULTIPLIER;
         
         paddleHitSound.current.currentTime = 0;
         paddleHitSound.current.play();
@@ -616,7 +723,7 @@ const Pong = () => {
           const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
           const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
           
-          const padding = isMobile ? 10 : 20;
+          const padding = isMobile ? GAME_CONFIG.MOBILE.PADDING : GAME_CONFIG.DESKTOP.PADDING;
           const availableWidth = viewportWidth - padding * 2;
           const availableHeight = viewportHeight - padding * 2;
           
@@ -654,7 +761,7 @@ const Pong = () => {
           canvas.style.left = '';
           canvas.style.transform = '';
           canvas.style.zIndex = '';
-          canvas.style.maxWidth = '100%'; // Restore original mobile scaling
+          canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH; // Restore original mobile scaling
           
           document.body.style.overflow = '';
           document.body.classList.remove('pong-fullscreen');
@@ -673,40 +780,40 @@ const Pong = () => {
       ballX = frameOffset + gameWidth / 2;
       ballY = frameOffset + gameHeight / 2;
       ballSpeedX = -ballSpeedX;
-      ballSpeedY = Math.random() * 6 - 3;
+      ballSpeedY = Math.random() * GAME_CONFIG.BALL.RANDOM_SPEED_RANGE - (GAME_CONFIG.BALL.RANDOM_SPEED_RANGE / 2);
     };
     
     const drawStartScreen = () => {
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = GAME_CONFIG.COLORS.BACKGROUND;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '48px Arial';
+      ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
+      ctx.font = `${GAME_CONFIG.UI.START_SCREEN.TITLE_FONT_SIZE}px Arial`;
       ctx.textAlign = 'center';
-      ctx.fillText('React Pong', canvas.width / 2, canvas.height / 3);
+      ctx.fillText('React Pong', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.TITLE_Y_OFFSET);
       
-      ctx.font = '24px Arial';
+      ctx.font = `${GAME_CONFIG.UI.START_SCREEN.SUBTITLE_FONT_SIZE}px Arial`;
       
       if (inputSource.current === 'touch') {
-        ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET);
         
-        ctx.font = '18px Arial';
-        ctx.fillText('Drag to move paddle • Tap to pause', canvas.width / 2, canvas.height / 2 + 40);
-        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 70);
+        ctx.font = `${GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
+        ctx.fillText('Drag to move paddle • Tap to pause', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING);
+        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 2);
         
       } else {
-        ctx.fillText('Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('Press SPACE or UP/DOWN to Start', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET);
         
         if (gamepadConnected) {
-          ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / 2 + 40);
+          ctx.fillText('or Press A Button on Gamepad', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING);
         }
         
-        ctx.font = '18px Arial';
-        const yOffset = gamepadConnected ? 70 : 40;
-        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + yOffset);
+        ctx.font = `${GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
+        const yOffset = gamepadConnected ? GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 2 : GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING;
+        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + yOffset);
         
         if (gamepadConnected) {
-          ctx.fillText('or Press Y Button for fullscreen', canvas.width / 2, canvas.height / 2 + 100);
+          ctx.fillText('or Press Y Button for fullscreen', canvas.width / 2, canvas.height / GAME_CONFIG.UI.START_SCREEN.SUBTITLE_Y_OFFSET + GAME_CONFIG.UI.START_SCREEN.INSTRUCTION_LINE_SPACING * 3);
         }
       }
     };
@@ -716,59 +823,59 @@ const Pong = () => {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '36px Arial';
+      ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.TITLE_FONT_SIZE}px Arial`;
       ctx.textAlign = 'center';
-      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 30);
+      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.TITLE_Y_OFFSET);
       
-      ctx.font = '20px Arial';
+      ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
       
       if (inputSource.current === 'gamepad') {
-        ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET);
         
-        ctx.font = '16px Arial';
-        ctx.fillText('Press Y Button to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
+        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
+        ctx.fillText('Press Y Button to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET);
         
       } else if (inputSource.current === 'touch') {
-        ctx.fillText('Tap to Resume', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.fillText('Tap to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET);
         
-        ctx.font = '16px Arial';
-        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
+        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
+        ctx.fillText('Double-tap to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET);
         
       } else {
-        ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.RESUME_Y_OFFSET);
         
-        ctx.font = '16px Arial';
-        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + 50);
+        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.INSTRUCTION_FONT_SIZE}px Arial`;
+        ctx.fillText('Press ENTER to enter/exit fullscreen', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.FULLSCREEN_Y_OFFSET);
       }
       
       if (inputSource.current === 'touch') {
-        ctx.font = '20px Arial';
-        ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + 80);
+        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
+        ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET);
         
       } else if (inputSource.current === 'gamepad') {
-        ctx.font = '20px Arial';
-        ctx.fillText('Press B Button to Exit', canvas.width / 2, canvas.height / 2 + 80);
+        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
+        ctx.fillText('Press B Button to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET);
         
       } else {
-        ctx.font = '20px Arial';
-        ctx.fillText('Press ESC to Exit', canvas.width / 2, canvas.height / 2 + 80);
+        ctx.font = `${GAME_CONFIG.UI.PAUSE_SCREEN.FONT_SIZE}px Arial`;
+        ctx.fillText('Press ESC to Exit', canvas.width / 2, canvas.height / 2 + GAME_CONFIG.UI.PAUSE_SCREEN.Y_OFFSET);
       }
       
       // Mobile exit button
       if (inputSource.current === 'touch') {
-        const buttonWidth = 80;
-        const buttonHeight = 40;
-        const buttonX = 20;
-        const buttonY = 20;
+        const buttonWidth = GAME_CONFIG.UI.EXIT_BUTTON.WIDTH;
+        const buttonHeight = GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT;
+        const buttonX = GAME_CONFIG.UI.EXIT_BUTTON.X;
+        const buttonY = GAME_CONFIG.UI.EXIT_BUTTON.Y;
         
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+        ctx.fillStyle = GAME_CONFIG.COLORS.EXIT_BUTTON;
         ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = GAME_CONFIG.COLORS.FOREGROUND;
+        ctx.lineWidth = GAME_CONFIG.UI.LINE_WIDTH;
         ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = GAME_CONFIG.COLORS.FOREGROUND;
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('EXIT', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 6);
@@ -780,7 +887,7 @@ const Pong = () => {
         drawStartScreen();
         
       } else if (gameStateRef.current === 'playing') {
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = GAME_CONFIG.COLORS.BACKGROUND;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         drawFrame();
@@ -794,7 +901,7 @@ const Pong = () => {
         updateGame();
         
       } else if (gameStateRef.current === 'paused') {
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = GAME_CONFIG.COLORS.BACKGROUND;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         drawFrame();
@@ -812,8 +919,51 @@ const Pong = () => {
       }
     };
     
+    const handleVisibilityChange = () => {
+      // Exit fullscreen mode when page becomes hidden to prevent blank screen bug
+      if (document.hidden && isFullscreenMode) {
+        console.log("Page hidden while in fullscreen - exiting fullscreen mode");
+        toggleFullscreenMode();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // Clean up fullscreen styles before page unloads
+      if (isFullscreenMode) {
+        console.log("Page unloading while in fullscreen - cleaning up styles");
+        const canvas = canvasRef.current;
+        if (canvas) {
+          canvas.style.position = '';
+          canvas.style.top = '';
+          canvas.style.left = '';
+          canvas.style.transform = '';
+          canvas.style.zIndex = '';
+          canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
+        }
+        
+        document.body.style.overflow = '';
+        document.body.classList.remove('pong-fullscreen');
+        
+        const fullscreenStyle = document.getElementById('pong-fullscreen-style');
+        if (fullscreenStyle) {
+          fullscreenStyle.remove();
+        }
+      }
+    };
+
+    const handlePopState = () => {
+      // Clean up fullscreen styles when navigating back/forward
+      if (isFullscreenMode) {
+        console.log("Navigation detected while in fullscreen - cleaning up styles");
+        handleBeforeUnload();
+      }
+    };
+
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
     window.addEventListener("gamepadconnected", gamepadConnectHandler);
     window.addEventListener("gamepaddisconnected", gamepadDisconnectHandler);
     
@@ -827,7 +977,7 @@ const Pong = () => {
     checkGamepads();
     gameLoop();
     
-    gamepadPollingInterval = setInterval(pollGamepad, 16);
+    gamepadPollingInterval = setInterval(pollGamepad, GAME_CONFIG.GAMEPAD.POLLING_INTERVAL);
     
     return () => {
       console.log("Component unmounting - cleaning up resources");
@@ -835,6 +985,9 @@ const Pong = () => {
       
       document.removeEventListener('keydown', keyDownHandler);
       document.removeEventListener('keyup', keyUpHandler);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
       window.removeEventListener("gamepadconnected", gamepadConnectHandler);
       window.removeEventListener("gamepaddisconnected", gamepadDisconnectHandler);
       
@@ -845,6 +998,25 @@ const Pong = () => {
       }
       
       clearInterval(gamepadPollingInterval);
+      
+      // Clean up fullscreen styles when component unmounts
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.style.position = '';
+        canvas.style.top = '';
+        canvas.style.left = '';
+        canvas.style.transform = '';
+        canvas.style.zIndex = '';
+        canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
+      }
+      
+      document.body.style.overflow = '';
+      document.body.classList.remove('pong-fullscreen');
+      
+      const fullscreenStyle = document.getElementById('pong-fullscreen-style');
+      if (fullscreenStyle) {
+        fullscreenStyle.remove();
+      }
       
       if (paddleHitSound.current) {
         paddleHitSound.current.pause();
@@ -871,11 +1043,11 @@ const Pong = () => {
       <div className="d-flex justify-content-center mb-4">
         <canvas 
           ref={canvasRef} 
-          width="848" 
-          height="548" 
+          width={GAME_CONFIG.CANVAS.WIDTH} 
+          height={GAME_CONFIG.CANVAS.HEIGHT} 
           style={{ 
-            background: '#000', 
-            maxWidth: '100%'
+            background: GAME_CONFIG.COLORS.BACKGROUND, 
+            maxWidth: GAME_CONFIG.CANVAS.MAX_WIDTH
           }}
         />
       </div>
