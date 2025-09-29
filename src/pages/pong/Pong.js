@@ -322,8 +322,8 @@ const Pong = () => {
       ctx.font = '48px Arial';
       ctx.textAlign = 'center';
       
-      ctx.fillText(player1Score, frameOffset + gameWidth / 4, 60);
-      ctx.fillText(player2Score, frameOffset + (3 * gameWidth) / 4, 60);
+      ctx.fillText(player1Score, frameOffset + gameWidth / 4, 75);
+      ctx.fillText(player2Score, frameOffset + (3 * gameWidth) / 4, 75);
     };
 
     const drawPauseButton = () => {
@@ -332,7 +332,7 @@ const Pong = () => {
       const buttonSize = 60;
       // Position outside game frame like scores - in top right corner
       const buttonX = frameOffset + gameWidth - buttonSize - 15;
-      const buttonY = 15; // Outside frame, same level as scores (Y=60 for scores, but button is smaller)
+      const buttonY = 15; // Keep consistent 15px margin from top
       const cornerRadius = 12;
       
       // Draw rounded rectangle background
