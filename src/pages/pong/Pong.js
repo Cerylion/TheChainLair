@@ -194,6 +194,19 @@ const Pong = () => {
       
       lastTapTime.current = currentTime;
       
+      // Pause button interaction (playing state only)
+      if (gameStateRef.current === 'playing') {
+        const buttonSize = 40;
+        const buttonX = frameOffset + gameWidth - buttonSize - 10;
+        const buttonY = frameOffset + 10;
+        
+        if (touchX >= buttonX && touchX <= buttonX + buttonSize &&
+            touchY >= buttonY && touchY <= buttonY + buttonSize) {
+          updateGameState('paused');
+          return;
+        }
+      }
+      
       // Exit button interaction (pause state only)
       if (gameStateRef.current === 'paused') {
         const buttonWidth = 80;
@@ -213,15 +226,10 @@ const Pong = () => {
       
       if (gameStateRef.current === 'start') {
         updateGameState('playing');
-      } else if (gameStateRef.current === 'playing') {
-        setTimeout(() => {
-          if (!isDragging.current) {
-            updateGameState('paused');
-          }
-        }, 100);
       } else if (gameStateRef.current === 'paused') {
         updateGameState('playing');
       }
+      // Removed the automatic pause timeout that was causing accidental pauses
     };
    
     const touchMoveHandler = (e) => {
@@ -285,12 +293,38 @@ const Pong = () => {
     };
     
     const drawScore = () => {
-      ctx.font = '24px Arial';
       ctx.fillStyle = '#FFFFFF';
+      ctx.font = '48px Arial';
       ctx.textAlign = 'center';
       
-      ctx.fillText(player1Score, frameOffset + gameWidth / 4, frameOffset + 30);
-      ctx.fillText(player2Score, frameOffset + (gameWidth / 4) * 3, frameOffset + 30);
+      ctx.fillText(player1Score, frameOffset + gameWidth / 4, 60);
+      ctx.fillText(player2Score, frameOffset + (3 * gameWidth) / 4, 60);
+    };
+
+    const drawPauseButton = () => {
+      if (inputSource.current !== 'touch' || gameStateRef.current !== 'playing') return;
+      
+      const buttonSize = 40;
+      const buttonX = frameOffset + gameWidth - buttonSize - 10; // 10px from right edge of game area
+      const buttonY = frameOffset + 10; // 10px from top edge of game area
+      
+      // Button background (transparent)
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(buttonX, buttonY, buttonSize, buttonSize);
+      
+      // Pause symbol (two vertical bars)
+      ctx.fillStyle = '#FFFFFF';
+      const barWidth = 6;
+      const barHeight = 20;
+      const barSpacing = 8;
+      const startX = buttonX + (buttonSize - (2 * barWidth + barSpacing)) / 2;
+      const startY = buttonY + (buttonSize - barHeight) / 2;
+      
+      // Left bar
+      ctx.fillRect(startX, startY, barWidth, barHeight);
+      // Right bar
+      ctx.fillRect(startX + barWidth + barSpacing, startY, barWidth, barHeight);
     };
     
     const drawFrame = () => {
@@ -680,6 +714,7 @@ const Pong = () => {
         drawPaddle(frameOffset, player1Y);
         drawPaddle(frameOffset + gameWidth - paddleWidth, player2Y);
         drawScore();
+        drawPauseButton(); // Add pause button to playing state
         
         updateGame();
         
