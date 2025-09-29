@@ -78,6 +78,7 @@ import Contact from './pages/Contact';              // Contact form page
 import ProductDetail from './pages/ProductDetail';  // Dynamic product detail pages
 import Games from './pages/Games';                  // Games collection page
 import Pong from './pages/pong/Pong';              // Pong game component
+import PongV2 from './pages/pongV2/PongV2';        // Refined Pong game component
 
 /**
  * App Component
@@ -220,6 +221,17 @@ function App() {
               - Demonstrates nested routing structure for game organization
             */}
             <Route path="/games/pong" element={<Pong />} />
+            
+            {/* ========================================
+                REFINED PONG GAME ROUTE
+                ======================================== */}
+            {/* 
+              Refined Pong game route - Enhanced version with improvements
+              - path="/games/pong-refined": Matches /games/pong-refined URL
+              - element={<PongV2 />}: Renders the refined Pong game component
+              - Implements architectural improvements from code review
+            */}
+            <Route path="/games/pong-refined" element={<PongV2 />} />
             
           </Routes>
         </main>
