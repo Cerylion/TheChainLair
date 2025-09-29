@@ -22,9 +22,17 @@ const Pong = () => {
   const [_, setGameState] = useState('start'); // 'start', 'playing', 'paused'
   const gameStateRef = useRef('start'); // Ref to track current game state for immediate access
   
+  // Mobile device detection
+  const [isMobile, setIsMobile] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  
   // Track input source and game active state
-  const inputSource = useRef('keyboard'); // 'keyboard' or 'gamepad'
+  const inputSource = useRef('keyboard'); // 'keyboard', 'gamepad', or 'touch'
   const isGameActive = useRef(true);
+  
+  // Touch control state
+  const touchStartY = useRef(null);
+  const isDragging = useRef(false);
   
   // Audio references for game sounds
   const paddleHitSound = useRef(null);
@@ -34,6 +42,16 @@ const Pong = () => {
   const lastSouthButtonStateRef = useRef(false);
   const lastEastButtonStateRef = useRef(false);
 
+  // Mobile device detection function
+  const detectMobileDevice = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase()) ||
+                          ('ontouchstart' in window) ||
+                          (navigator.maxTouchPoints > 0) ||
+                          (navigator.msMaxTouchPoints > 0);
+    return isMobileDevice;
+  };
+
   
   // Custom state setter that updates both state and ref
   const updateGameState = (newState) => {
@@ -42,6 +60,11 @@ const Pong = () => {
   };
   
   useEffect(() => {
+    // Mobile device detection
+    const mobileDetected = detectMobileDevice();
+    setIsMobile(mobileDetected);
+    console.log("Mobile device detected:", mobileDetected);
+    
     // Audio initialization
     paddleHitSound.current = new Audio(PADDLE_HIT_SOUND);
     scoreSound.current = new Audio(SCORE_SOUND);
@@ -204,6 +227,108 @@ const Pong = () => {
     };
     
     // Event listeners will be added in useEffect for proper cleanup
+    
+    // Touch event handlers for mobile devices
+    /**
+     * Handle touch start events for paddle movement and game control
+     * @param {TouchEvent} e - The touch event
+     */
+     const touchStartHandler = (e) => {
+       e.preventDefault();
+       
+       if (!isMobile) return;
+       
+       const touch = e.touches[0];
+       const rect = canvas.getBoundingClientRect();
+       const touchX = touch.clientX - rect.left;
+       const touchY = touch.clientY - rect.top;
+       
+       // Set input source to touch
+       inputSource.current = 'touch';
+       
+       // Check if touch is on exit button when paused
+       if (gameStateRef.current === 'paused') {
+         const buttonWidth = 80;
+         const buttonHeight = 40;
+         const buttonX = 20;
+         const buttonY = 20;
+         
+         // Check if touch is within exit button bounds
+         if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
+             touchY >= buttonY && touchY <= buttonY + buttonHeight) {
+           // Exit button clicked
+           cleanupGame();
+           return;
+         }
+       }
+       
+       // Store initial touch position for dragging
+       touchStartY.current = touchY;
+       isDragging.current = false;
+       
+       // Handle tap-to-pause/unpause
+       if (gameStateRef.current === 'start') {
+         updateGameState('playing');
+       } else if (gameStateRef.current === 'playing') {
+         // Don't pause immediately on touch start, wait to see if it's a drag
+         setTimeout(() => {
+           if (!isDragging.current) {
+             updateGameState('paused');
+           }
+         }, 100);
+       } else if (gameStateRef.current === 'paused') {
+         updateGameState('playing');
+       }
+     };
+    
+    /**
+     * Handle touch move events for paddle dragging
+     * @param {TouchEvent} e - The touch event
+     */
+    const touchMoveHandler = (e) => {
+      e.preventDefault();
+      
+      if (!isMobile || touchStartY.current === null) return;
+      
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const touchY = touch.clientY - rect.top;
+      
+      // Calculate movement threshold to determine if this is a drag
+      const moveThreshold = 10;
+      if (Math.abs(touchY - touchStartY.current) > moveThreshold) {
+        isDragging.current = true;
+      }
+      
+      // Only move paddle during gameplay and when dragging
+      if (gameStateRef.current === 'playing' && isDragging.current) {
+        // Calculate paddle position based on touch position
+        const newPaddleY = touchY - (paddleHeight / 2);
+        
+        // Constrain paddle within canvas bounds
+        if (newPaddleY >= 0 && newPaddleY <= canvas.height - paddleHeight) {
+          player1Y = newPaddleY;
+        }
+      }
+    };
+    
+    /**
+     * Handle touch end events
+     * @param {TouchEvent} e - The touch event
+     */
+    const touchEndHandler = (e) => {
+      e.preventDefault();
+      
+      if (!isMobile) return;
+      
+      // Reset touch state
+      touchStartY.current = null;
+      isDragging.current = false;
+      
+      // Reset movement flags
+      upPressed = false;
+      downPressed = false;
+    };
     
     // Draw functions
     /**
@@ -519,12 +644,42 @@ const Pong = () => {
       ctx.font = '20px Arial';
       if (inputSource.current === 'gamepad') {
         ctx.fillText('Press A Button to Resume', canvas.width / 2, canvas.height / 2 + 20);
+      } else if (inputSource.current === 'touch') {
+        ctx.fillText('Tap to Resume', canvas.width / 2, canvas.height / 2 + 20);
       } else {
         ctx.fillText('Press SPACE to Resume', canvas.width / 2, canvas.height / 2 + 20);
       }
       
       // Exit instruction
-      ctx.fillText('Press ESC or B Button to Exit', canvas.width / 2, canvas.height / 2 + 60);
+      if (inputSource.current === 'touch') {
+        ctx.fillText('Tap Exit Button to Exit', canvas.width / 2, canvas.height / 2 + 60);
+      } else {
+        ctx.fillText('Press ESC or B Button to Exit', canvas.width / 2, canvas.height / 2 + 60);
+      }
+      
+      // Draw exit button for mobile devices
+      if (isMobile) {
+        // Exit button dimensions and position (top-left corner)
+        const buttonWidth = 80;
+        const buttonHeight = 40;
+        const buttonX = 20;
+        const buttonY = 20;
+        
+        // Button background
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+        
+        // Button border
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
+        
+        // Button text
+        ctx.fillStyle = '#000000';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('EXIT', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 6);
+      }
     };
     
     /**
@@ -573,6 +728,14 @@ const Pong = () => {
     window.addEventListener("gamepadconnected", gamepadConnectHandler);
     window.addEventListener("gamepaddisconnected", gamepadDisconnectHandler);
     
+    // Add touch event listeners for mobile devices
+    if (mobileDetected) {
+      canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
+      canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
+      canvas.addEventListener('touchend', touchEndHandler, { passive: false });
+      console.log("Touch event listeners added for mobile device");
+    }
+    
     // Check for already connected gamepads
     checkGamepads();
     
@@ -593,6 +756,13 @@ const Pong = () => {
       document.removeEventListener('keyup', keyUpHandler);
       window.removeEventListener("gamepadconnected", gamepadConnectHandler);
       window.removeEventListener("gamepaddisconnected", gamepadDisconnectHandler);
+      
+      // Remove touch event listeners if they were added
+      if (mobileDetected) {
+        canvas.removeEventListener('touchstart', touchStartHandler);
+        canvas.removeEventListener('touchmove', touchMoveHandler);
+        canvas.removeEventListener('touchend', touchEndHandler);
+      }
       
       // Clear intervals
       clearInterval(gamepadPollingInterval);
