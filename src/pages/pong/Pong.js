@@ -826,28 +826,25 @@ const Pong = () => {
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
       
+      // Draw borders from outside to inside for proper layering
       const borderLayers = [
-        { color: '#FFFFFF', width: 8 }, // Inner white layer (increased)
-        { color: '#808080', width: 8 }, // Middle paddle grey layer (increased)
-        { color: '#000000', width: 10 } // Outer black layer (increased for better visibility)
+        { color: '#000000', width: 10, offset: 0 },   // Outer black layer
+        { color: '#808080', width: 8, offset: 10 },   // Middle grey layer  
+        { color: '#FFFFFF', width: 8, offset: 18 }    // Inner white layer
       ];
-      
-      let currentOffset = 0;
       
       borderLayers.forEach(layer => {
         ctx.strokeStyle = layer.color;
         ctx.lineWidth = layer.width;
         
-        // Calculate border position
-        const x = currentOffset + layer.width / 2;
-        const y = currentOffset + layer.width / 2;
-        const width = canvas.width - (currentOffset + layer.width / 2) * 2;
-        const height = canvas.height - (currentOffset + layer.width / 2) * 2;
+        // Calculate border position with proper offset
+        const x = layer.offset + layer.width / 2;
+        const y = layer.offset + layer.width / 2;
+        const width = canvas.width - (layer.offset + layer.width / 2) * 2;
+        const height = canvas.height - (layer.offset + layer.width / 2) * 2;
         
         // Draw border rectangle with clean, simple lines
         ctx.strokeRect(x, y, width, height);
-        
-        currentOffset += layer.width;
       });
     };
 
