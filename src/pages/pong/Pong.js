@@ -38,6 +38,10 @@ const Pong = () => {
   const lastTapTime = useRef(0);
   const doubleTapDelay = 300; // milliseconds
   
+  // Fullscreen mode state
+  const [isFullscreenMode, setIsFullscreenMode] = useState(false);
+  const originalCanvasSize = useRef({ width: 800, height: 400 });
+  
   // Audio references for game sounds
   const paddleHitSound = useRef(null);
   const scoreSound = useRef(null);
@@ -193,11 +197,7 @@ const Pong = () => {
       // Enter key toggles fullscreen
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (document.fullscreenElement) {
-          document.exitFullscreen();
-        } else {
-          document.documentElement.requestFullscreen();
-        }
+        toggleFullscreenMode();
         return;
       }
       
@@ -266,11 +266,7 @@ const Pong = () => {
        
        if (timeDiff < doubleTapDelay) {
          // Double-tap detected - toggle fullscreen
-         if (document.fullscreenElement) {
-           document.exitFullscreen();
-         } else {
-           document.documentElement.requestFullscreen();
-         }
+         toggleFullscreenMode();
          lastTapTime.current = 0; // Reset to prevent triple-tap issues
          return;
        }
@@ -471,11 +467,7 @@ const Pong = () => {
           // Handle fullscreen with north button
           if (northButtonPressed) {
             if (!lastNorthButtonStateRef.current) {
-              if (document.fullscreenElement) {
-                document.exitFullscreen();
-              } else {
-                document.documentElement.requestFullscreen();
-              }
+              toggleFullscreenMode();
             }
             lastNorthButtonStateRef.current = true;
           } else {
@@ -639,6 +631,82 @@ const Pong = () => {
     };
     
     /**
+     * Toggles custom fullscreen mode
+     */
+    const toggleFullscreenMode = () => {
+      setIsFullscreenMode(prev => {
+        const newFullscreenState = !prev;
+        
+        if (newFullscreenState) {
+          // Store original canvas size
+          originalCanvasSize.current = { width: canvas.width, height: canvas.height };
+          
+          // Calculate new canvas size to fit screen with border
+          const borderWidth = 15; // Total border width (3 layers of 5px each)
+          const availableWidth = window.innerWidth - borderWidth * 2;
+          const availableHeight = window.innerHeight - borderWidth * 2;
+          
+          // Maintain aspect ratio (2:1)
+          const aspectRatio = 2;
+          let newWidth, newHeight;
+          
+          if (availableWidth / availableHeight > aspectRatio) {
+            // Height is the limiting factor
+            newHeight = availableHeight;
+            newWidth = newHeight * aspectRatio;
+          } else {
+            // Width is the limiting factor
+            newWidth = availableWidth;
+            newHeight = newWidth / aspectRatio;
+          }
+          
+          // Update canvas size
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          
+          // Update canvas style to center it
+          canvas.style.position = 'fixed';
+          canvas.style.top = '50%';
+          canvas.style.left = '50%';
+          canvas.style.transform = 'translate(-50%, -50%)';
+          canvas.style.zIndex = '9999';
+          
+          // Hide body overflow
+          document.body.style.overflow = 'hidden';
+          
+          // Reset ball and paddle positions for new canvas size
+          ballX = canvas.width / 2;
+          ballY = canvas.height / 2;
+          player1Y = (canvas.height - paddleHeight) / 2;
+          player2Y = (canvas.height - paddleHeight) / 2;
+          
+        } else {
+          // Restore original canvas size
+          canvas.width = originalCanvasSize.current.width;
+          canvas.height = originalCanvasSize.current.height;
+          
+          // Reset canvas style
+          canvas.style.position = '';
+          canvas.style.top = '';
+          canvas.style.left = '';
+          canvas.style.transform = '';
+          canvas.style.zIndex = '';
+          
+          // Restore body overflow
+          document.body.style.overflow = '';
+          
+          // Reset ball and paddle positions for original canvas size
+          ballX = canvas.width / 2;
+          ballY = canvas.height / 2;
+          player1Y = (canvas.height - paddleHeight) / 2;
+          player2Y = (canvas.height - paddleHeight) / 2;
+        }
+        
+        return newFullscreenState;
+      });
+    };
+
+    /**
      * Resets the ball to the center of the screen after scoring
      * Reverses horizontal direction and randomizes vertical direction
      */
@@ -757,6 +825,37 @@ const Pong = () => {
     };
     
     /**
+     * Draws the 3-layer border for fullscreen mode
+     */
+    const drawFullscreenBorder = () => {
+      if (!isFullscreenMode) return;
+      
+      const borderLayers = [
+        { color: '#FFFFFF', width: 5 }, // Outer white layer
+        { color: '#808080', width: 5 }, // Middle paddle grey layer  
+        { color: '#FFFFFF', width: 5 }  // Inner white layer
+      ];
+      
+      let currentOffset = 0;
+      
+      borderLayers.forEach(layer => {
+        ctx.strokeStyle = layer.color;
+        ctx.lineWidth = layer.width;
+        
+        // Calculate border position
+        const x = currentOffset + layer.width / 2;
+        const y = currentOffset + layer.width / 2;
+        const width = canvas.width - (currentOffset + layer.width / 2) * 2;
+        const height = canvas.height - (currentOffset + layer.width / 2) * 2;
+        
+        // Draw border rectangle
+        ctx.strokeRect(x, y, width, height);
+        
+        currentOffset += layer.width;
+      });
+    };
+
+    /**
      * Main game loop that runs every animation frame
      * Clears the canvas, draws all game elements, and updates the game state
      */
@@ -764,6 +863,7 @@ const Pong = () => {
       // Handle different game states
       if (gameStateRef.current === 'start') {
         drawStartScreen();
+        drawFullscreenBorder();
       } else if (gameStateRef.current === 'playing') {
         // Clear canvas with black background
         ctx.fillStyle = '#000000';
@@ -775,6 +875,7 @@ const Pong = () => {
         drawPaddle(0, player1Y);  // Draw player paddle (left)
         drawPaddle(canvas.width - paddleWidth, player2Y);  // Draw computer paddle (right)
         drawScore();   // Draw current score
+        drawFullscreenBorder(); // Draw border if in fullscreen mode
         
         // Update game state for next frame
         updateGame();
@@ -785,6 +886,7 @@ const Pong = () => {
         drawPaddle(0, player1Y);
         drawPaddle(canvas.width - paddleWidth, player2Y);
         drawScore();
+        drawFullscreenBorder(); // Draw border if in fullscreen mode
         
         // Draw pause overlay
         drawPauseScreen();
