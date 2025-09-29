@@ -134,6 +134,48 @@ const stopSound = (soundRef) => {
   }
 };
 
+// Transform touch coordinates based on canvas scaling and fullscreen mode
+const transformTouchCoordinates = (touch, canvas, isFullscreenMode) => {
+  const rect = canvas.getBoundingClientRect();
+  let touchX = touch.clientX - rect.left;
+  let touchY = touch.clientY - rect.top;
+  
+  if (isFullscreenMode) {
+    // Handle fullscreen mode with transform matrix scaling
+    const canvasStyle = window.getComputedStyle(canvas);
+    const transform = canvasStyle.transform;
+    
+    if (transform && transform !== 'none') {
+      // Extract scale from transform matrix
+      const matrix = transform.match(/matrix\(([^)]+)\)/);
+      if (matrix) {
+        const values = matrix[1].split(',').map(parseFloat);
+        const scaleX = values[0];
+        const scaleY = values[3];
+        
+        // Adjust touch coordinates for scale
+        const canvasRect = canvas.getBoundingClientRect();
+        const canvasCenterX = canvasRect.left + canvasRect.width / 2;
+        const canvasCenterY = canvasRect.top + canvasRect.height / 2;
+        
+        // Convert to canvas coordinates
+        touchX = (touch.clientX - canvasCenterX) / scaleX + canvas.width / 2;
+        touchY = (touch.clientY - canvasCenterY) / scaleY + canvas.height / 2;
+      }
+    }
+  } else {
+    // Handle normal mode with simple scaling
+    const scaleX = rect.width / canvas.width;
+    const scaleY = rect.height / canvas.height;
+    
+    // Convert touch coordinates to canvas coordinates
+    touchX = touchX / scaleX;
+    touchY = touchY / scaleY;
+  }
+  
+  return { touchX, touchY };
+};
+
 const Pong = () => {
   const canvasRef = useRef(null);
   const [gamepadConnected, setGamepadConnected] = useState(false);
@@ -305,42 +347,7 @@ const Pong = () => {
       e.preventDefault();
       
       const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      let touchX = touch.clientX - rect.left;
-      let touchY = touch.clientY - rect.top;
-      
-      // Adjust coordinates for fullscreen mode
-      if (isFullscreenMode) {
-        const canvasStyle = window.getComputedStyle(canvas);
-        const transform = canvasStyle.transform;
-        
-        if (transform && transform !== 'none') {
-          // Extract scale from transform matrix
-          const matrix = transform.match(/matrix\(([^)]+)\)/);
-          if (matrix) {
-            const values = matrix[1].split(',').map(parseFloat);
-            const scaleX = values[0];
-            const scaleY = values[3];
-            
-            // Adjust touch coordinates for scale
-            const canvasRect = canvas.getBoundingClientRect();
-            const canvasCenterX = canvasRect.left + canvasRect.width / 2;
-            const canvasCenterY = canvasRect.top + canvasRect.height / 2;
-            
-            // Convert to canvas coordinates
-            touchX = (touch.clientX - canvasCenterX) / scaleX + canvas.width / 2;
-            touchY = (touch.clientY - canvasCenterY) / scaleY + canvas.height / 2;
-          }
-        }
-      } else {
-        // Adjust coordinates for normal mode when canvas is scaled (mobile)
-        const scaleX = rect.width / canvas.width;
-        const scaleY = rect.height / canvas.height;
-        
-        // Convert touch coordinates to canvas coordinates
-        touchX = touchX / scaleX;
-        touchY = touchY / scaleY;
-      }
+      const { touchX, touchY } = transformTouchCoordinates(touch, canvas, isFullscreenMode);
       
       inputSource.current = 'touch';
       
@@ -398,14 +405,7 @@ const Pong = () => {
       if (touchStartY.current === null) return;
       
       const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      let touchY = touch.clientY - rect.top;
-      
-      // Apply coordinate transformation for mobile scaling
-      if (!isFullscreenMode) {
-        const scaleY = rect.height / canvas.height;
-        touchY = touchY / scaleY;
-      }
+      const { touchY } = transformTouchCoordinates(touch, canvas, isFullscreenMode);
       
       const moveThreshold = GAME_CONFIG.MOBILE.MOVE_THRESHOLD;
       

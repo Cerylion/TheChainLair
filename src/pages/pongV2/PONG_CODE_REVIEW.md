@@ -31,17 +31,37 @@ This document provides a comprehensive analysis of the Pong.js codebase, identif
 
 ## Duplicate Code & Patterns
 
-### 1. Repetitive Sound Management
-**Location**: Lines 590-598, 604-606
-```javascript
-// Pattern repeated multiple times:
-paddleHitSound.current.currentTime = 0;
-paddleHitSound.current.play();
+### 1. ✅ Repetitive Sound Management - COMPLETED
+~~**Location**: Lines 590-598, 604-606~~
+~~```javascript~~
+~~// Pattern repeated multiple times:~~
+~~paddleHitSound.current.currentTime = 0;~~
+~~paddleHitSound.current.play();~~
 
-scoreSound.current.currentTime = 0;
-scoreSound.current.play();
+~~scoreSound.current.currentTime = 0;~~
+~~scoreSound.current.play();~~
+~~```~~
+~~**Recommendation**: Create a `playSound(soundRef)` utility function.~~
+
+**STATUS**: ✅ **COMPLETED** - Sound utility functions implemented:
+```javascript
+// Utility functions added to PongV2.js
+const playSound = (sound) => {
+  if (sound && sound.current) {
+    sound.current.pause();
+    sound.current.currentTime = 0;
+    sound.current.play().catch(e => console.log('Audio play failed:', e));
+  }
+};
+
+const stopSound = (sound) => {
+  if (sound && sound.current) {
+    sound.current.pause();
+    sound.current.currentTime = 0;
+  }
+};
 ```
-**Recommendation**: Create a `playSound(soundRef)` utility function.
+**Result**: Eliminated code duplication by replacing all repetitive sound management patterns with utility function calls, improving maintainability and following DRY principles.
 
 ### 2. Coordinate Transformation Logic
 **Location**: Lines 175-214 (touchStartHandler), 266-306 (touchMoveHandler)
@@ -281,7 +301,7 @@ export const GAME_CONFIG = {
 
 ### High Priority (Immediate Impact)
 1. ~~**Extract Configuration Constants** - Easy win, improves maintainability~~ - **COMPLETED** ✅
-2. **Create Sound Utility Functions** - Reduces duplication
+2. ~~**Create Sound Utility Functions** - Reduces duplication~~ - **COMPLETED** ✅
 3. **Extract Coordinate Transformation Logic** - Simplifies touch handling
 4. **Break Down Large Functions** - Improves readability
 
@@ -299,13 +319,13 @@ export const GAME_CONFIG = {
 
 ## Estimated Refactoring Effort
 
-- ~~**Phase 1** (Constants & Utilities): 2-3 hours~~ ✅ **COMPLETED** (Configuration Constants)
+- ~~**Phase 1** (Constants & Utilities): 2-3 hours~~ ✅ **COMPLETED** (Configuration Constants & Sound Utilities)
 - **Phase 2** (Function Extraction): 4-5 hours  
 - **Phase 3** (State Management): 3-4 hours
 - **Phase 4** (Component Decomposition): 6-8 hours
 - **Phase 5** (Performance Optimization): 4-6 hours
 
-**Total Estimated Effort**: ~~19-26 hours~~ **16-23 hours** (Updated after Phase 1 completion)
+**Total Estimated Effort**: ~~19-26 hours~~ **14-21 hours** (Updated after Phase 1 completion)
 
 ## Conclusion
 
@@ -321,3 +341,5 @@ The refactoring should be done incrementally, starting with the high-priority it
 
 ## Progress Update
 ✅ **Configuration Constants Extraction**: Successfully completed - all magic numbers have been centralized into a comprehensive GAME_CONFIG object, improving maintainability and making the codebase more configurable.
+
+✅ **Sound Utility Functions**: Successfully completed - eliminated repetitive sound management code by implementing `playSound()` and `stopSound()` utility functions. All instances of duplicated sound playing/stopping logic have been replaced with clean utility function calls, following DRY principles and improving code maintainability.
