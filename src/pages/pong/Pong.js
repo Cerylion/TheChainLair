@@ -177,8 +177,33 @@ const Pong = () => {
       
       const touch = e.touches[0];
       const rect = canvas.getBoundingClientRect();
-      const touchX = touch.clientX - rect.left;
-      const touchY = touch.clientY - rect.top;
+      let touchX = touch.clientX - rect.left;
+      let touchY = touch.clientY - rect.top;
+      
+      // Adjust coordinates for fullscreen mode
+      if (isFullscreenMode) {
+        const canvasStyle = window.getComputedStyle(canvas);
+        const transform = canvasStyle.transform;
+        
+        if (transform && transform !== 'none') {
+          // Extract scale from transform matrix
+          const matrix = transform.match(/matrix\(([^)]+)\)/);
+          if (matrix) {
+            const values = matrix[1].split(',').map(parseFloat);
+            const scaleX = values[0];
+            const scaleY = values[3];
+            
+            // Adjust touch coordinates for scale
+            const canvasRect = canvas.getBoundingClientRect();
+            const canvasCenterX = canvasRect.left + canvasRect.width / 2;
+            const canvasCenterY = canvasRect.top + canvasRect.height / 2;
+            
+            // Convert to canvas coordinates
+            touchX = (touch.clientX - canvasCenterX) / scaleX + canvas.width / 2;
+            touchY = (touch.clientY - canvasCenterY) / scaleY + canvas.height / 2;
+          }
+        }
+      }
       
       inputSource.current = 'touch';
       
@@ -196,9 +221,9 @@ const Pong = () => {
       
       // Pause button interaction (playing state only)
       if (gameStateRef.current === 'playing') {
-        const buttonSize = 40;
-        const buttonX = frameOffset + gameWidth - buttonSize - 10;
-        const buttonY = frameOffset + 10;
+        const buttonSize = 60; // Match the new button size
+        const buttonX = frameOffset + gameWidth - buttonSize - 15;
+        const buttonY = 15; // Updated to match new position outside frame
         
         if (touchX >= buttonX && touchX <= buttonX + buttonSize &&
             touchY >= buttonY && touchY <= buttonY + buttonSize) {
@@ -304,27 +329,51 @@ const Pong = () => {
     const drawPauseButton = () => {
       if (inputSource.current !== 'touch' || gameStateRef.current !== 'playing') return;
       
-      const buttonSize = 40;
-      const buttonX = frameOffset + gameWidth - buttonSize - 10; // 10px from right edge of game area
-      const buttonY = frameOffset + 10; // 10px from top edge of game area
+      const buttonSize = 60;
+      // Position outside game frame like scores - in top right corner
+      const buttonX = frameOffset + gameWidth - buttonSize - 15;
+      const buttonY = 15; // Outside frame, same level as scores (Y=60 for scores, but button is smaller)
+      const cornerRadius = 12;
       
-      // Button background (transparent)
+      // Draw rounded rectangle background
+      ctx.beginPath();
+      ctx.moveTo(buttonX + cornerRadius, buttonY);
+      ctx.lineTo(buttonX + buttonSize - cornerRadius, buttonY);
+      ctx.quadraticCurveTo(buttonX + buttonSize, buttonY, buttonX + buttonSize, buttonY + cornerRadius);
+      ctx.lineTo(buttonX + buttonSize, buttonY + buttonSize - cornerRadius);
+      ctx.quadraticCurveTo(buttonX + buttonSize, buttonY + buttonSize, buttonX + buttonSize - cornerRadius, buttonY + buttonSize);
+      ctx.lineTo(buttonX + cornerRadius, buttonY + buttonSize);
+      ctx.quadraticCurveTo(buttonX, buttonY + buttonSize, buttonX, buttonY + buttonSize - cornerRadius);
+      ctx.lineTo(buttonX, buttonY + cornerRadius);
+      ctx.quadraticCurveTo(buttonX, buttonY, buttonX + cornerRadius, buttonY);
+      ctx.closePath();
+      
+      // Button background (semi-transparent)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.fill();
+      
+      // Button border
       ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(buttonX, buttonY, buttonSize, buttonSize);
+      ctx.lineWidth = 3;
+      ctx.stroke();
       
       // Pause symbol (two vertical bars)
       ctx.fillStyle = '#FFFFFF';
-      const barWidth = 6;
-      const barHeight = 20;
-      const barSpacing = 8;
+      const barWidth = 8;
+      const barHeight = 28;
+      const barSpacing = 10;
       const startX = buttonX + (buttonSize - (2 * barWidth + barSpacing)) / 2;
       const startY = buttonY + (buttonSize - barHeight) / 2;
       
-      // Left bar
-      ctx.fillRect(startX, startY, barWidth, barHeight);
-      // Right bar
-      ctx.fillRect(startX + barWidth + barSpacing, startY, barWidth, barHeight);
+      // Left bar with rounded edges
+      ctx.beginPath();
+      ctx.roundRect(startX, startY, barWidth, barHeight, 2);
+      ctx.fill();
+      
+      // Right bar with rounded edges
+      ctx.beginPath();
+      ctx.roundRect(startX + barWidth + barSpacing, startY, barWidth, barHeight, 2);
+      ctx.fill();
     };
     
     const drawFrame = () => {
