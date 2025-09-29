@@ -690,8 +690,8 @@ const Pong = () => {
           const scaleY = availableHeight / canvas.height;
           const scale = Math.min(scaleX, scaleY); // Use smaller scale to maintain aspect ratio
           
-          // Ensure minimum scale of 1.0 to prevent shrinking
-          const finalScale = Math.max(scale, 1.0);
+          // Use the calculated scale (allow scaling down to fit screen)
+          const finalScale = scale;
           
           // Apply fullscreen styles with scale transform
           canvas.style.position = 'fixed';
