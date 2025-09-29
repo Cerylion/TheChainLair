@@ -34,6 +34,8 @@
   - Ensured consistent variable usage throughout the cleanup function
   - **Result**: Canvas cleanup now works properly without initialization errors, preventing runtime crashes
 
+## New Bug - immediatly enters and exits fullscreen mode with a single double-click
+- **Description**: When playing with mouse in normal screen and attempting to access fullscreen mode, the screen will into fullscreen for a split second and then exit.
 
 ## Executive Summary
 This document provides a comprehensive analysis of the Pong.js codebase, identifying areas for improvement, code duplication, simplification opportunities, and performance optimizations. The current implementation is functional but contains several areas that could benefit from refactoring.

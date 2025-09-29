@@ -224,8 +224,6 @@ const Pong = () => {
   // Mouse support refs
   const mouseStartY = useRef(null);
   const isMouseDragging = useRef(false);
-  const lastClickTime = useRef(0);
-  const doubleClickDelay = GAME_CONFIG.MOBILE.DOUBLE_TAP_DELAY; // Reuse the same delay
   
   const [isFullscreenMode, setIsFullscreenMode] = useState(false);
   const paddleHitSound = useRef(null);
@@ -486,18 +484,6 @@ const Pong = () => {
       const { touchX, touchY } = transformTouchCoordinates({ clientX: e.clientX, clientY: e.clientY }, canvas, isFullscreenMode);
       
       inputSource.current = 'mouse';
-      
-      // Double-click detection for fullscreen (using single clicks with timing)
-      const currentTime = Date.now();
-      const timeDiff = currentTime - lastClickTime.current;
-      
-      if (timeDiff < doubleClickDelay) {
-        toggleFullscreenMode();
-        lastClickTime.current = 0;
-        return;
-      }
-      
-      lastClickTime.current = currentTime;
       
       // Pause button interaction (playing state only)
       if (gameStateRef.current === 'playing') {
