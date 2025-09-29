@@ -325,21 +325,32 @@ const Pong = () => {
       const rect = canvas.getBoundingClientRect();
       const touchY = touch.clientY - rect.top;
       
-      // Calculate movement threshold to determine if this is a drag
-      const moveThreshold = 10;
+      // Calculate movement threshold to determine if this is a drag (reduced for better sensitivity)
+      const moveThreshold = 3;
       if (Math.abs(touchY - touchStartY.current) > moveThreshold) {
         isDragging.current = true;
       }
       
       // Only move paddle during gameplay and when dragging
       if (gameStateRef.current === 'playing' && isDragging.current) {
-        // Calculate paddle position based on touch position
-        const newPaddleY = touchY - (paddleHeight / 2);
+        // Calculate relative movement from last touch position
+        const deltaY = touchY - touchStartY.current;
+        const newPaddleY = player1Y + deltaY;
         
-        // Constrain paddle within canvas bounds
-        if (newPaddleY >= 0 && newPaddleY <= canvas.height - paddleHeight) {
+        // Constrain paddle within canvas bounds (accounting for frame offset)
+        const minY = frameOffset;
+        const maxY = frameOffset + gameHeight - paddleHeight;
+        
+        if (newPaddleY >= minY && newPaddleY <= maxY) {
           player1Y = newPaddleY;
+        } else if (newPaddleY < minY) {
+          player1Y = minY;
+        } else if (newPaddleY > maxY) {
+          player1Y = maxY;
         }
+        
+        // Update touch start position for continuous relative movement
+        touchStartY.current = touchY;
       }
     };
     
