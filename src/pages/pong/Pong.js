@@ -236,8 +236,6 @@ const Pong = () => {
      const touchStartHandler = (e) => {
        e.preventDefault();
        
-       if (!isMobile) return;
-       
        const touch = e.touches[0];
        const rect = canvas.getBoundingClientRect();
        const touchX = touch.clientX - rect.left;
@@ -288,7 +286,7 @@ const Pong = () => {
     const touchMoveHandler = (e) => {
       e.preventDefault();
       
-      if (!isMobile || touchStartY.current === null) return;
+      if (touchStartY.current === null) return;
       
       const touch = e.touches[0];
       const rect = canvas.getBoundingClientRect();
@@ -318,8 +316,6 @@ const Pong = () => {
      */
     const touchEndHandler = (e) => {
       e.preventDefault();
-      
-      if (!isMobile) return;
       
       // Reset touch state
       touchStartY.current = null;
