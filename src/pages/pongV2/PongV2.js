@@ -116,6 +116,24 @@ const GAME_CONFIG = {
   }
 };
 
+// Sound utility functions to eliminate code duplication
+const playSound = (soundRef) => {
+  if (soundRef.current) {
+    soundRef.current.currentTime = 0;
+    soundRef.current.play().catch(error => {
+      // Silently handle audio play errors (e.g., user hasn't interacted with page yet)
+      console.warn('Audio play failed:', error);
+    });
+  }
+};
+
+const stopSound = (soundRef) => {
+  if (soundRef.current) {
+    soundRef.current.pause();
+    soundRef.current.currentTime = 0;
+  }
+};
+
 const Pong = () => {
   const canvasRef = useRef(null);
   const [gamepadConnected, setGamepadConnected] = useState(false);
@@ -683,8 +701,7 @@ const Pong = () => {
         const deltaY = ballY - (player1Y + paddleHeight / 2);
         ballSpeedY = deltaY * GAME_CONFIG.BALL.SPEED_MULTIPLIER;
         
-        paddleHitSound.current.currentTime = 0;
-        paddleHitSound.current.play();
+        playSound(paddleHitSound);
       }
       
       // Ball collision with computer paddle
@@ -693,23 +710,20 @@ const Pong = () => {
         const deltaY = ballY - (player2Y + paddleHeight / 2);
         ballSpeedY = deltaY * GAME_CONFIG.BALL.SPEED_MULTIPLIER;
         
-        paddleHitSound.current.currentTime = 0;
-        paddleHitSound.current.play();
+        playSound(paddleHitSound);
       }
       
       // Scoring
       if (ballX < frameOffset) {
         player2Score++;
         
-        scoreSound.current.currentTime = 0;
-        scoreSound.current.play();
+        playSound(scoreSound);
         
         resetBall();
       } else if (ballX > frameOffset + gameWidth) {
         player1Score++;
         
-        scoreSound.current.currentTime = 0;
-        scoreSound.current.play();
+        playSound(scoreSound);
         
         resetBall();
       }
