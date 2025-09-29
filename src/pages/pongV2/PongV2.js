@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Container } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-
-import PADDLE_HIT_SOUND from './assets/sounds/bip.mp3';
-import SCORE_SOUND from './assets/sounds/score.mp3';
+import useAudioManager from './hooks/useAudioManager';
 
 // Game Configuration Constants
 const GAME_CONFIG = {
@@ -117,22 +115,7 @@ const GAME_CONFIG = {
 };
 
 // Sound utility functions to eliminate code duplication
-const playSound = (soundRef) => {
-  if (soundRef.current) {
-    soundRef.current.currentTime = 0;
-    soundRef.current.play().catch(error => {
-      // Silently handle audio play errors (e.g., user hasn't interacted with page yet)
-      console.warn('Audio play failed:', error);
-    });
-  }
-};
-
-const stopSound = (soundRef) => {
-  if (soundRef.current) {
-    soundRef.current.pause();
-    soundRef.current.currentTime = 0;
-  }
-};
+// These are now provided by the useAudioManager hook
 
 // Transform touch coordinates based on canvas scaling and fullscreen mode
 const transformTouchCoordinates = (touch, canvas, isFullscreenMode) => {
@@ -226,8 +209,9 @@ const Pong = () => {
   const isMouseDragging = useRef(false);
   
   const [isFullscreenMode, setIsFullscreenMode] = useState(false);
-  const paddleHitSound = useRef(null);
-  const scoreSound = useRef(null);
+  
+  // Audio management using custom hook
+  const { playPaddleHitSound, playScoreSound, stopAllSounds } = useAudioManager();
   
   const lastSouthButtonStateRef = useRef(false);
   const lastEastButtonStateRef = useRef(false);
@@ -251,9 +235,6 @@ const Pong = () => {
     const mobileDetected = detectMobileDevice();
     setIsMobile(mobileDetected);
     console.log("Mobile device detected:", mobileDetected);
-    
-    paddleHitSound.current = new Audio(PADDLE_HIT_SOUND);
-    scoreSound.current = new Audio(SCORE_SOUND);
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -672,14 +653,8 @@ const Pong = () => {
     const cleanupGame = () => {
       isGameActive.current = false;
       
-      if (paddleHitSound.current) {
-        paddleHitSound.current.pause();
-        paddleHitSound.current.currentTime = 0;
-      }
-      if (scoreSound.current) {
-        scoreSound.current.pause();
-        scoreSound.current.currentTime = 0;
-      }
+      // Stop all audio using the audio manager hook
+      stopAllSounds();
       
       clearInterval(gamepadPollingInterval);
       
@@ -807,7 +782,7 @@ const Pong = () => {
         const deltaY = ballY - (player1Y + paddleHeight / 2);
         ballSpeedY = deltaY * GAME_CONFIG.BALL.SPEED_MULTIPLIER;
         
-        playSound(paddleHitSound);
+        playPaddleHitSound();
       }
       
       // Ball collision with computer paddle
@@ -816,20 +791,20 @@ const Pong = () => {
         const deltaY = ballY - (player2Y + paddleHeight / 2);
         ballSpeedY = deltaY * GAME_CONFIG.BALL.SPEED_MULTIPLIER;
         
-        playSound(paddleHitSound);
+        playPaddleHitSound();
       }
       
       // Scoring
       if (ballX < frameOffset) {
         player2Score++;
         
-        playSound(scoreSound);
+        playScoreSound();
         
         resetBall();
       } else if (ballX > frameOffset + gameWidth) {
         player1Score++;
         
-        playSound(scoreSound);
+        playScoreSound();
         
         resetBall();
       }
@@ -1132,14 +1107,7 @@ const Pong = () => {
         fullscreenStyle.remove();
       }
       
-      if (paddleHitSound.current) {
-        paddleHitSound.current.pause();
-        paddleHitSound.current.currentTime = 0;
-      }
-      if (scoreSound.current) {
-        scoreSound.current.pause();
-        scoreSound.current.currentTime = 0;
-      }
+      // Audio cleanup is now handled by the useAudioManager hook
     };
   }, []);
   
