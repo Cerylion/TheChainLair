@@ -203,6 +203,14 @@ const Pong = () => {
             touchY = (touch.clientY - canvasCenterY) / scaleY + canvas.height / 2;
           }
         }
+      } else {
+        // Adjust coordinates for normal mode when canvas is scaled (mobile)
+        const scaleX = rect.width / canvas.width;
+        const scaleY = rect.height / canvas.height;
+        
+        // Convert touch coordinates to canvas coordinates
+        touchX = touchX / scaleX;
+        touchY = touchY / scaleY;
       }
       
       inputSource.current = 'touch';
