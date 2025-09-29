@@ -13,7 +13,7 @@ import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import ProductDetail from './pages/ProductDetail';
 import Games from './pages/Games';
-import Pong from './pages/Pong';
+import Pong from './pages/pong/Pong';
 
 function App() {
   return (

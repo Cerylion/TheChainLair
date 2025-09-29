@@ -9,9 +9,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
-// Sound effect URLs
-const PADDLE_HIT_SOUND = `${process.env.PUBLIC_URL}/sounds/bip.mp3`;
-const SCORE_SOUND = `${process.env.PUBLIC_URL}/sounds/score.mp3`;
+// Sound effect imports
+import PADDLE_HIT_SOUND from './assets/sounds/bip.mp3';
+import SCORE_SOUND from './assets/sounds/score.mp3';
 
 const Pong = () => {
   // Reference to the canvas element for drawing the game
