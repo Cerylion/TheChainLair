@@ -99,11 +99,13 @@ const Games = () => {
             */}
             <Card.Body className="d-flex flex-column">
               {/* Game title */}
-              <Card.Title>Pong</Card.Title>
+              <Card.Title>React Pong</Card.Title>
               
               {/* Game description text */}
               <Card.Text>
-                A classic arcade game where you control a paddle to bounce a ball back and forth.
+                A modern implementation of the classic Pong arcade game built with React and HTML5 Canvas.
+                Features responsive design, gamepad support, touch controls for mobile, and immersive fullscreen mode.
+                Experience smooth 60fps gameplay with authentic sound effects and AI opponent.
               </Card.Text>
               
               {/* 
@@ -111,7 +113,7 @@ const Games = () => {
                 - mt-auto: Pushes this div to bottom of flex container
                 - Ensures all buttons align at same height regardless of description length
               */}
-              <div className="mt-auto">
+              <div className="mt-auto text-center">
                 {/* 
                   React Router Link component for client-side navigation
                   - to="/games/pong": Navigates to Pong game page
@@ -125,26 +127,28 @@ const Games = () => {
         </Col>
         
         {/* ========================================
-            PLACEHOLDER CARD 1 - FUTURE GAME
+            REACT PONG REFINED CARD
             ======================================== */}
         {/* 
-          Identical structure to Pong card but for future game development
-          Shows users that more content is coming
+          Second game card featuring the refined version of Pong
+          Showcases architectural improvements and code quality enhancements
         */}
         <Col md={4}>
           <Card className="h-100">
             <Card.Body className="d-flex flex-column">
-              <Card.Title>Coming Soon</Card.Title>
+              <Card.Title>React Pong Refined</Card.Title>
               <Card.Text>
-                A new exciting game is being developed. Stay tuned!
+                An enhanced version of React Pong featuring modular architecture, custom hooks for input handling,
+                optimized rendering with separated game logic, and improved performance through better state management.
+                Built with modern React patterns and clean code principles.
               </Card.Text>
-              <div className="mt-auto">
+              <div className="mt-auto text-center">
                 {/* 
-                  Disabled button to indicate unavailable content
-                  - btn-secondary: Gray styling to indicate inactive state
-                  - disabled: Prevents clicking and adds visual indication
+                  React Router Link component for client-side navigation
+                  - to="/games/pong-refined": Navigates to refined Pong game page
+                  - className="btn btn-primary": Blue button matching the first card
                 */}
-                <span className="btn btn-secondary disabled">Coming Soon</span>
+                <Link to="/games/pong-refined" className="btn btn-primary">Play Now</Link>
               </div>
             </Card.Body>
           </Card>
@@ -164,7 +168,7 @@ const Games = () => {
               <Card.Text>
                 Another amazing game is in the works. Check back later!
               </Card.Text>
-              <div className="mt-auto">
+              <div className="mt-auto text-center">
                 {/* Disabled button matching the previous placeholder */}
                 <span className="btn btn-secondary disabled">Coming Soon</span>
               </div>
