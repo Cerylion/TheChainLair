@@ -638,7 +638,7 @@ const Pong = () => {
         
         if (newFullscreenState) {
           // Calculate scale factor to fit screen with border
-          const borderWidth = 15; // Total border width (3 layers of 5px each)
+          const borderWidth = 26; // Total border width (8 + 8 + 10 = 26px)
           const availableWidth = window.innerWidth - borderWidth * 2;
           const availableHeight = window.innerHeight - borderWidth * 2;
           
@@ -820,10 +820,16 @@ const Pong = () => {
     const drawFullscreenBorder = () => {
       if (!isFullscreenMode) return;
       
+      // Clear any existing canvas effects/shadows
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      
       const borderLayers = [
-        { color: '#FFFFFF', width: 5 }, // Inner white layer
-        { color: '#808080', width: 5 }, // Middle paddle grey layer  
-        { color: '#000000', width: 5 }  // Outer black layer
+        { color: '#FFFFFF', width: 8 }, // Inner white layer (increased)
+        { color: '#808080', width: 8 }, // Middle paddle grey layer (increased)
+        { color: '#000000', width: 10 } // Outer black layer (increased for better visibility)
       ];
       
       let currentOffset = 0;
@@ -838,7 +844,7 @@ const Pong = () => {
         const width = canvas.width - (currentOffset + layer.width / 2) * 2;
         const height = canvas.height - (currentOffset + layer.width / 2) * 2;
         
-        // Draw border rectangle
+        // Draw border rectangle with clean, simple lines
         ctx.strokeRect(x, y, width, height);
         
         currentOffset += layer.width;
