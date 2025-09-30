@@ -559,10 +559,7 @@ export const GAME_CONFIG = {
      - Extract `renderInputInstructions` for start/pause screens
      - Extract `handleGamepadButtons` and `handleGamepadMovement` from pollGamepad
      
-     **Phase 2: Extract Input Management (3-4 hours)**
-     - Create `useKeyboardInput` custom hook
-     - Create `useTouchInput` custom hook  
-     - Create `useGamepadInput` custom hook
+     **Phase 2: Extract Input Management (unknown time)**
      - Consolidate input source management
      
      **Phase 3: Extract Rendering Logic (2-3 hours)**
@@ -635,3 +632,131 @@ The refactoring should be done incrementally, starting with the high-priority it
 - **UI text updates**: Updated instruction text from "Tap" to "Click" for appropriate mouse terminology
 
 **Current Status**: All high-priority refactoring items and the mouse support implementation have been completed. The codebase now has significantly improved maintainability, reduced duplication, enhanced functionality, and comprehensive input support across keyboard, gamepad, touch, and mouse. The application runs without runtime errors and provides an excellent user experience across all input methods.
+
+---
+
+## 🚀 **NEW HIGH-PRIORITY TASK: Input System Redesign**
+
+### **Objective**: Action-Based Input Architecture Implementation
+
+**Problem Statement**: The current input system has significant code duplication across four input methods (keyboard, mouse, gamepad, touch). Each input type has its own handlers with repeated logic for similar game actions, making the codebase difficult to maintain and extend.
+
+**Solution**: Implement an action-based input abstraction layer that separates game actions from input sources, creating a unified and maintainable input system.
+
+### **📋 Implementation Roadmap**
+
+#### **Phase 1: Architecture Design & Planning**
+1. **Define Game Actions** - Identify all possible player actions independent of input type:
+   - `PAUSE_GAME` - Begin gameplay - Pause/resume game (simplify game logic by making the game begin in a paused state on the start screen)
+   - `EXIT_GAME` - Return to main menu (only works during pause)
+   - `MOVE_PADDLE_UP` - Move player paddle upward
+   - `MOVE_PADDLE_DOWN` - Move player paddle downward
+   - `TOGGLE_FULLSCREEN` - Enter/exit fullscreen mode
+   - `DRAG_START` - Begin paddle dragging (mouse and touch)
+   - `DRAG_END` - End paddle dragging
+
+2. **Design Input Abstraction Layer**:
+   ```javascript
+   // Core action system
+   const GameActions = {
+     PAUSE_GAME: 'PAUSE_GAME',
+     // ... other actions
+   };
+
+   // Input mapping system
+   const InputMappings = {
+     keyboard: { /* key mappings */ },
+     mouse: { /* mouse mappings */ },
+     gamepad: { /* button/axis mappings */ },
+     touch: { /* gesture mappings */ }
+   };
+   ```
+
+#### **Phase 2: Core System Implementation**
+3. **Create Action Dispatcher**:
+   - Central action processing system
+   - Action validation and filtering
+   - State-aware action handling
+   - Debug logging for action flow
+
+4. **Implement Input Managers**:
+   - `KeyboardInputManager` - Keyboard event handling
+   - `MouseInputManager` - Mouse event handling  
+   - `GamepadInputManager` - Gamepad polling and events
+   - `TouchInputManager` - Touch gesture handling
+
+5. **Create Input Mapping System**:
+   - Simple controls.
+   - There are only 5 buttons to be pressed on keyboard:
+     - `Space` - Start/Pause/Resume game
+     - `Escape` - Exit game (only works during pause)
+     - `Enter` - Enter/exit fullscreen
+     - `Up Arrow` - Move player paddle up
+     - `Down Arrow` - Move player paddle down
+
+   - Similarly, there are only 5 buttons to be pressed on gamepad, plus mobility on the stick:
+     - `South or A` - Start/Pause/Resume game
+     - `East or B` - Exit game (only works during pause)
+     - `North or Y` - Enter/exit fullscreen
+     - `D-Pad Up and Stick Up` - Move player paddle up
+     - `D-Pad Down and Stick Down` - Move player paddle down
+
+   - Then we have Mouse and Touch input, that introduce playability mechanics, basically buttons so that you can't pause/unpause/exit by mistake. Follow the existing assets in the game.
+     - `leftclick / tap` - Start on startscreen (the whole screen is overlayed with a giant invisible pause button)
+     - `leftclick on pause/unpause button / tap on pause/unpause button` - Pause/Resume game
+     - `leftclick on exit button / tap on exit button` - Exit game (only works during pause)(button only exists within the pause state)
+     - `double leftclick / double tap` - Enter/exit fullscreen
+     - `leftclick and drag / touch and drag` - Move player paddle (conserve the sensibility already existing for touch drag, make it equally sensible)
+
+#### **Phase 3: Legacy System Removal**
+6. **Remove Existing Input Handlers**:
+   - Delete `keyDownHandler` and `keyUpHandler`
+   - Remove `mouseDownHandler`, `mouseMoveHandler`, `mouseUpHandler`, `doubleClickHandler`
+   - Eliminate `touchStartHandler`, `touchMoveHandler`, `touchEndHandler`
+   - Clean up `pollGamepad` function
+
+7. **Refactor Game Logic**:
+   - Replace direct input handling with action-based logic
+   - Update game state management to respond to actions
+   - Modify UI rendering to use action system
+
+#### **Phase 4: Integration & Testing**
+8. **Integrate New System**:
+   - Connect input managers to action dispatcher
+   - Implement action-to-game-logic mapping
+   - Add input source detection and switching
+
+9. **Create Custom Hooks**:
+   - `useInputSystem()` - Main input system hook
+   - `useActionDispatcher()` - Action handling hook
+   - `useInputMappings()` - Configuration management
+
+10. **Comprehensive Testing**:
+    - Test all input methods with new system
+    - Verify action consistency across inputs
+    - Performance testing and optimization
+
+#### **Phase 5: Enhancement & Documentation**
+11. **Advanced Features**:
+    - Input combination support (e.g., Ctrl+Key)
+    - Customizable key bindings
+    - Input sensitivity settings
+    - Accessibility improvements
+
+12. **Documentation & Cleanup**:
+    - Update code comments and documentation
+    - Create input system usage guide
+    - Performance benchmarking
+    - Code review and final optimization
+
+### **Expected Benefits**
+- **Maintainability**: Single source of truth for game actions
+- **Extensibility**: Easy to add new input methods or actions
+- **Consistency**: Uniform behavior across all input types
+- **Testability**: Actions can be tested independently of input sources
+- **Performance**: Optimized event handling and reduced code duplication
+- **Accessibility**: Easier to implement alternative input methods
+
+### **Implementation Priority**: 🔴 **CRITICAL - START IMMEDIATELY**
+
+**Status**: 📋 **PLANNING PHASE** - Ready to begin Phase 1 implementation
