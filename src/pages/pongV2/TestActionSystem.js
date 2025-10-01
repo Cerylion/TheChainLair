@@ -32,8 +32,8 @@ const TestActionSystem = () => {
         getBoundingClientRect: () => ({ top: 0, left: 0 })
       } 
     },
-    isFullscreenMode: false,
-    setIsFullscreenMode: (value) => { gameRefs.current.isFullscreenMode = value; }
+    isFullscreenMode: { current: false },
+    setIsFullscreenMode: (value) => { gameRefs.current.isFullscreenMode.current = value; }
   });
 
   const gameConfig = {
@@ -55,7 +55,7 @@ const TestActionSystem = () => {
     },
     toggleFullscreenMode: () => {
       addTestResult('✓ Fullscreen toggle called');
-      gameRefs.current.isFullscreenMode = !gameRefs.current.isFullscreenMode;
+      gameRefs.current.isFullscreenMode.current = !gameRefs.current.isFullscreenMode.current;
     },
     constrainPaddle: (y, frameOffset, gameHeight, paddleHeight) => {
       const minY = frameOffset;

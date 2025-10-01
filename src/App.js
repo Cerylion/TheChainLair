@@ -80,6 +80,7 @@ import Games from './pages/Games';                  // Games collection page
 import Pong from './pages/pong/Pong';              // Pong game component
 import PongV2 from './pages/pongV2/PongV2';        // Refined Pong game component
 import TestActionSystem from './pages/pongV2/TestActionSystem'; // Action system test component
+import TestInputMapper from './pages/pongV2/test/TestInputMapper'; // Input mapper test component
 
 /**
  * App Component
@@ -244,6 +245,14 @@ function App() {
               - Provides browser-based testing for useActionSystem hook
             */}
             <Route path="/test/action-system" element={<TestActionSystem />} />
+            
+            {/* 
+              Test route for input mapper functionality
+              - path="/test/input-mapper": Matches /test/input-mapper URL
+              - element={<TestInputMapper />}: Renders the input mapper test component
+              - Provides browser-based testing for useInputMapper hook
+            */}
+            <Route path="/test/input-mapper" element={<TestInputMapper />} />
             
           </Routes>
         </main>
