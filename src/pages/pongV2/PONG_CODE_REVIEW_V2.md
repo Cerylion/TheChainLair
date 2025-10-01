@@ -67,11 +67,21 @@ This document provides a comprehensive analysis of the current Pong V2 codebase,
 - **Performance Optimization**: Audio preloading and volume control
 - **Memory Management**: Proper cleanup preventing audio-related memory leaks
 
+#### **4. Action-Based Input Foundation** ✅ **COMPLETED**
+- **Action Constants**: Created comprehensive `GAME_ACTIONS` constants in `gameActions.js`
+- **Input Mappings**: Implemented complete `INPUT_MAPPINGS` configuration in `inputMappings.js`
+- **Device Support**: Full keyboard, gamepad, touch, and mouse input mappings
+- **Preserved Relationships**: All existing button-to-action mappings maintained
+- **Context-Aware Actions**: State-based action validation system (start/playing/paused)
+- **Testing Framework**: Comprehensive test suite in `test-input-mappings.js`
+- **Safe Implementation**: Zero-risk approach with standalone configuration files
+- **Future-Ready**: Prepared for controller abstraction layer implementation
+
 ---
 
 ## 📊 Current Codebase Analysis
 
-### **File Structure Overview**
+### **Original File Structure Overview** 📋 **STARTING POINT** **DO NOT MODIFY**
 ```
 pongV2/
 ├── PongV2.js                    (952 lines) - Main component
@@ -82,7 +92,28 @@ pongV2/
 │       ├── bip.mp3             - Paddle hit sound
 │       └── score.mp3           - Score sound
 ├── config/
-│   └── gameConfig.js           (118 lines) - Game configuration
+│   ├── gameConfig.js           (118 lines) - Game configuration
+├── hooks/
+│   └── useAudioManager.js      (102 lines) - Audio management hook
+└── utils/
+    └── GameRenderer.js         (328 lines) - Drawing utilities
+```
+**DO NOT MODIFY THE ABOVE FILE STRUCTURE**
+
+### **Current File Structure Overview** ✅ **UPDATED** **MODIFY AS NEEDED**
+```
+pongV2/
+├── PongV2.js                    (952 lines) - Main component
+├── PONG_CODE_REVIEW.md         (762 lines) - Previous review
+├── PCR_V2.md                   (308 lines) - Implementation roadmap
+├── assets/
+│   └── sounds/
+│       ├── bip.mp3             - Paddle hit sound
+│       └── score.mp3           - Score sound
+├── config/
+│   ├── gameConfig.js           (118 lines) - Game configuration
+│   ├── gameActions.js          (37 lines) - Action constants ✅ NEW
+│   └── inputMappings.js        (108 lines) - Input device mappings ✅ NEW
 ├── hooks/
 │   └── useAudioManager.js      (102 lines) - Audio management hook
 └── utils/
@@ -277,8 +308,8 @@ const gameReducer = (state, action) => {
 **Priority: CRITICAL - NEW TOP PRIORITY**
 
 **Action System Implementation:**
-- [ ] Create `GAME_ACTIONS` constants - Define all game actions
-- [ ] Create `INPUT_MAPPINGS` configuration - Map device inputs to actions
+- [x] Create `GAME_ACTIONS` constants - Define all game actions ✅ **COMPLETED**
+- [x] Create `INPUT_MAPPINGS` configuration - Map device inputs to actions ✅ **COMPLETED**
 - [ ] Create `useActionSystem()` hook - Central action dispatcher
 - [ ] Create `useInputMapper()` hook - Device-to-action mapping
 - [ ] Implement action handler registry - Centralized action execution
