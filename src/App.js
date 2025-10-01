@@ -79,6 +79,7 @@ import ProductDetail from './pages/ProductDetail';  // Dynamic product detail pa
 import Games from './pages/Games';                  // Games collection page
 import Pong from './pages/pong/Pong';              // Pong game component
 import PongV2 from './pages/pongV2/PongV2';        // Refined Pong game component
+import TestActionSystem from './pages/pongV2/TestActionSystem'; // Action system test component
 
 /**
  * App Component
@@ -232,6 +233,17 @@ function App() {
               - Implements architectural improvements from code review
             */}
             <Route path="/games/pong-refined" element={<PongV2 />} />
+            
+            {/* ========================================
+                ACTION SYSTEM TEST ROUTE
+                ======================================== */}
+            {/* 
+              Test route for action system functionality
+              - path="/test/action-system": Matches /test/action-system URL
+              - element={<TestActionSystem />}: Renders the action system test component
+              - Provides browser-based testing for useActionSystem hook
+            */}
+            <Route path="/test/action-system" element={<TestActionSystem />} />
             
           </Routes>
         </main>
