@@ -2,7 +2,10 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Container } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import useAudioManager from './hooks/useAudioManager';
+import { useActionSystem } from './hooks/useActionSystem';
+import useInputMapper from './hooks/useInputMapper';
 import { GAME_CONFIG } from './config/gameConfig';
+import { createActionHandlerRegistry, registerAllHandlers } from './utils/actionHandlerRegistry';
 import {
   drawBall,
   drawPaddle,
@@ -120,13 +123,7 @@ const Pong = () => {
 
   const [isFullscreenMode, setIsFullscreenMode] = useState(false);
 
-  const { playPaddleHitSound, playScoreSound, stopAllSounds } = useAudioManager();
-
-  const lastSouthButtonStateRef = useRef(false);
-  const lastEastButtonStateRef = useRef(false);
-  const lastNorthButtonStateRef = useRef(false);
-
-  // Game state refs
+  // Game state refs - moved before gameRefs to fix initialization order
   const ballXRef = useRef(0);
   const ballYRef = useRef(0);
   const ballSpeedXRef = useRef(0);
@@ -139,6 +136,30 @@ const Pong = () => {
   const downPressedRef = useRef(false);
   const gamepadsRef = useRef({});
   const gamepadIndexRef = useRef(null);
+
+  const { playPaddleHitSound, playScoreSound, stopAllSounds } = useAudioManager();
+
+  // Initialize action system and input mapper
+  const gameRefs = {
+    gameState: gameStateRef,
+    upPressed: upPressedRef,
+    downPressed: downPressedRef,
+    isDragging,
+    touchStartY,
+    isMouseDragging,
+    mouseStartY,
+    player1Y: player1YRef,
+    canvas: canvasRef,
+    isFullscreenMode: { current: isFullscreenMode },
+    inputSource
+  };
+
+  const actionSystem = useActionSystem({ 
+    gameState: gameStateRef.current,
+    enableHistory: false 
+  });
+  const { dispatch, registerHandler } = actionSystem;
+  const { mapKeyboardInput, mapTouchInput, mapMouseInput, mapGamepadInput } = useInputMapper(dispatch);
 
   const detectMobileDevice = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -264,281 +285,38 @@ const Pong = () => {
     }
   }, [gamepadConnected]);
 
-  const keyDownHandler = useCallback((e) => {
-    // Set input source to keyboard when any key is pressed
-    inputSource.current = 'keyboard';
-    
-    switch (e.key) {
-      case 'ArrowUp':
-        e.preventDefault();
-        upPressedRef.current = true;
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        downPressedRef.current = true;
-        break;
-      case ' ':
-        e.preventDefault();
-        if (gameStateRef.current === 'start') {
-          updateGameState('playing');
-        } else if (gameStateRef.current === 'playing') {
-          updateGameState('paused');
-        } else if (gameStateRef.current === 'paused') {
-          updateGameState('playing');
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        // Only allow ESC to exit game when in paused state
-        if (gameStateRef.current === 'paused') {
-          cleanupGame();
-        }
-        break;
-      case 'Enter':
-        e.preventDefault();
-        toggleFullscreenMode();
-        break;
-    }
-  }, [updateGameState, cleanupGame, toggleFullscreenMode]);
 
-  const keyUpHandler = useCallback((e) => {
-    switch (e.key) {
-      case 'ArrowUp':
-        upPressedRef.current = false;
-        break;
-      case 'ArrowDown':
-        downPressedRef.current = false;
-        break;
-    }
-  }, []);
 
   // Remove the duplicate getPauseButtonBounds function and use the one from GameRenderer
   // This ensures the clickable area matches exactly with the visual button position
 
   const touchStartHandler = useCallback((e) => {
-    e.preventDefault();
-    
-    const canvas = canvasRef.current;
-    if (!canvas || e.touches.length === 0) return;
-
-    // Set input source immediately for UI visibility
-    inputSource.current = 'touch';
-
-    const touch = e.touches[0];
-    const coords = transformTouchCoordinates(touch, canvas, isFullscreenMode);
-    
-    // In fullscreen mode, constrain coordinates to game bounds to prevent button clicks outside game area
-    const frameOffset = GAME_CONFIG.FRAME.OFFSET;
-    const gameWidth = canvas.width - (frameOffset * 2);
-    const gameHeight = canvas.height - (frameOffset * 2);
-    const constrainedCoords = isFullscreenMode ? 
-      constrainPointToGameBounds(coords, frameOffset, gameWidth, gameHeight) : coords;
-    
-    // Check for pause button tap using the unified positioning logic
-    // Use original canvas dimensions for button positioning to match how the button is drawn
-    const pauseButtonBounds = getPauseButtonBounds(frameOffset, gameWidth);
-    
-
-    // Use original coordinates to match how the button is drawn
-    if (isPointInBounds(coords, pauseButtonBounds)) {
-      if (gameStateRef.current === 'playing') {
-        updateGameState('paused');
-      } else if (gameStateRef.current === 'paused') {
-        updateGameState('playing');
-      }
-      return;
-    }
-
-    // Handle pause screen interactions
-    if (gameStateRef.current === 'paused') {
-      // Check for exit button tap
-      const exitButtonBounds = {
-        x: GAME_CONFIG.UI.EXIT_BUTTON.X,
-        y: GAME_CONFIG.UI.EXIT_BUTTON.Y,
-        width: GAME_CONFIG.UI.EXIT_BUTTON.WIDTH,
-        height: GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT
-      };
-      
-      // Use original coordinates to match how the button is drawn
-      if (isPointInBounds(coords, exitButtonBounds)) {
-        cleanupGame();
-        return;
-      }
-      
-      // Check for unpause button tap (same bounds as pause button)
-      // Use original coordinates to match how the button is drawn
-      if (isPointInBounds(coords, pauseButtonBounds)) {
-        updateGameState('playing');
-        return;
-      }
-      
-      // Handle double tap for fullscreen while paused
-      const currentTime = Date.now();
-      if (currentTime - lastTapTime.current < doubleTapDelay) {
-        toggleFullscreenMode();
-        return;
-      }
-      lastTapTime.current = currentTime;
-      
-      // Ignore other taps on pause screen
-      return;
-    }
-
-    // Handle double tap for fullscreen
-    const currentTime = Date.now();
-    if (currentTime - lastTapTime.current < doubleTapDelay) {
-      toggleFullscreenMode();
-      return;
-    }
-    lastTapTime.current = currentTime;
-
-    // Handle game start
-    if (gameStateRef.current === 'start') {
-      updateGameState('playing');
-      return;
-    }
-
-    // Handle paddle control
-    if (gameStateRef.current === 'playing') {
-      touchStartY.current = constrainedCoords.y;
-      isDragging.current = true;
-      // inputSource.current already set at the beginning of function
-    }
-  }, [isFullscreenMode, toggleFullscreenMode, updateGameState, cleanupGame, getPauseButtonBounds]);
+    mapTouchInput(e, 'touchstart');
+  }, [mapTouchInput]);
 
   const touchMoveHandler = useCallback((e) => {
-    e.preventDefault();
-    
-    if (!isDragging.current || !touchStartY.current || e.touches.length === 0) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const touch = e.touches[0];
-    const coords = transformTouchCoordinates(touch, canvas, isFullscreenMode);
-    
-    const deltaY = coords.y - touchStartY.current;
-    const sensitivity = isMobile ? GAME_CONFIG.MOBILE.SENSITIVITY : 1;
-    
-    const frameOffset = GAME_CONFIG.FRAME.OFFSET;
-    const gameHeight = canvas.height - (frameOffset * 2);
-    const paddleHeight = GAME_CONFIG.PADDLE.HEIGHT;
-    
-    const newY = player1YRef.current + (deltaY * sensitivity);
-    player1YRef.current = constrainPaddle(newY, frameOffset, gameHeight, paddleHeight);
-    
-    touchStartY.current = coords.y;
-  }, [isFullscreenMode, isMobile]);
+    mapTouchInput(e, 'touchmove');
+  }, [mapTouchInput]);
 
   const touchEndHandler = useCallback((e) => {
-    e.preventDefault();
-    isDragging.current = false;
-    touchStartY.current = null;
-  }, []);
+    mapTouchInput(e, 'touchend');
+  }, [mapTouchInput]);
 
   const mouseDownHandler = useCallback((e) => {
-    e.preventDefault();
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const coords = transformMouseCoordinates(e, canvas, isFullscreenMode);
-    const mouseX = coords.x;
-    const mouseY = coords.y;
-    
-    // In fullscreen mode, constrain coordinates to game bounds to prevent button clicks outside game area
-    const frameOffset = GAME_CONFIG.FRAME.OFFSET;
-    const gameWidth = canvas.width - (frameOffset * 2);
-    const gameHeight = canvas.height - (frameOffset * 2);
-    const constrainedCoords = isFullscreenMode ? 
-      constrainPointToGameBounds(coords, frameOffset, gameWidth, gameHeight) : coords;
-    
-    // Check for pause button click using the unified positioning logic
-    // Use original canvas dimensions for button positioning to match how the button is drawn
-    const pauseButtonBounds = getPauseButtonBounds(frameOffset, gameWidth);
-
-    // Use original coordinates to match how the button is drawn
-    if (isPointInBounds(coords, pauseButtonBounds)) {
-      if (gameStateRef.current === 'playing') {
-        updateGameState('paused');
-      } else if (gameStateRef.current === 'paused') {
-        updateGameState('playing');
-      }
-      return;
-    }
-
-    // Handle pause screen interactions
-    if (gameStateRef.current === 'paused') {
-      // Check for exit button click
-      const exitButtonBounds = {
-        x: GAME_CONFIG.UI.EXIT_BUTTON.X,
-        y: GAME_CONFIG.UI.EXIT_BUTTON.Y,
-        width: GAME_CONFIG.UI.EXIT_BUTTON.WIDTH,
-        height: GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT
-      };
-      
-      // Use original coordinates to match how the button is drawn
-      if (isPointInBounds(coords, exitButtonBounds)) {
-        cleanupGame();
-        return;
-      }
-      
-      // Check for unpause button click (same bounds as pause button)
-      // Use original coordinates to match how the button is drawn
-      if (isPointInBounds(coords, pauseButtonBounds)) {
-        updateGameState('playing');
-        return;
-      }
-      
-      // Ignore clicks elsewhere on pause screen
-      return;
-    }
-
-    // Handle game start
-    if (gameStateRef.current === 'start') {
-      updateGameState('playing');
-      return;
-    }
-
-    // Handle paddle control
-    if (gameStateRef.current === 'playing') {
-      mouseStartY.current = constrainedCoords.y;
-      isMouseDragging.current = true;
-      inputSource.current = 'mouse';
-    }
-  }, [isFullscreenMode, updateGameState, cleanupGame, getPauseButtonBounds]);
+    mapMouseInput(e, 'mousedown');
+  }, [mapMouseInput]);
 
   const mouseMoveHandler = useCallback((e) => {
-    if (!isMouseDragging.current || !mouseStartY.current) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const mouseY = e.clientY - rect.top;
-    
-    const deltaY = mouseY - mouseStartY.current;
-    
-    const frameOffset = GAME_CONFIG.FRAME.OFFSET;
-    const gameHeight = canvas.height - (frameOffset * 2);
-    const paddleHeight = GAME_CONFIG.PADDLE.HEIGHT;
-    
-    const newY = player1YRef.current + deltaY;
-    player1YRef.current = constrainPaddle(newY, frameOffset, gameHeight, paddleHeight);
-    
-    mouseStartY.current = mouseY;
-  }, [isFullscreenMode]);
+    mapMouseInput(e, 'mousemove');
+  }, [mapMouseInput]);
 
   const mouseUpHandler = useCallback((e) => {
-    e.preventDefault();
-    isMouseDragging.current = false;
-    mouseStartY.current = null;
-  }, []);
+    mapMouseInput(e, 'mouseup');
+  }, [mapMouseInput]);
 
   const doubleClickHandler = useCallback((e) => {
-    e.preventDefault();
-    toggleFullscreenMode();
-  }, [toggleFullscreenMode]);
+    mapMouseInput(e, 'dblclick');
+  }, [mapMouseInput]);
 
   const pollGamepad = useCallback(() => {
     if (!gamepadConnected) return;
@@ -556,57 +334,9 @@ const Pong = () => {
 
     if (!activeGamepad) return;
 
-    const buttons = activeGamepad.buttons;
-    const axes = activeGamepad.axes;
-
-    // D-pad or left stick for paddle movement
-    const upPressed = (buttons[12] && buttons[12].pressed) || (axes[1] < -0.5);
-    const downPressed = (buttons[13] && buttons[13].pressed) || (axes[1] > 0.5);
-
-    if (upPressed) {
-      upPressedRef.current = true;
-      inputSource.current = 'gamepad';
-    } else {
-      upPressedRef.current = false;
-    }
-
-    if (downPressed) {
-      downPressedRef.current = true;
-      inputSource.current = 'gamepad';
-    } else {
-      downPressedRef.current = false;
-    }
-
-    // South button (A/X) for start/pause
-    const southPressed = buttons[0] && buttons[0].pressed;
-    if (southPressed && !lastSouthButtonStateRef.current) {
-      if (gameStateRef.current === 'start') {
-        updateGameState('playing');
-      } else if (gameStateRef.current === 'playing') {
-        updateGameState('paused');
-      } else if (gameStateRef.current === 'paused') {
-        updateGameState('playing');
-      }
-    }
-    lastSouthButtonStateRef.current = southPressed;
-
-    // East button (B/Circle) for exit
-    const eastPressed = buttons[1] && buttons[1].pressed;
-    if (eastPressed && !lastEastButtonStateRef.current) {
-      // Only allow east button to exit game when in paused state
-      if (gameStateRef.current === 'paused') {
-        cleanupGame();
-      }
-    }
-    lastEastButtonStateRef.current = eastPressed;
-
-    // North button (Y/Triangle) for fullscreen
-    const northPressed = buttons[3] && buttons[3].pressed;
-    if (northPressed && !lastNorthButtonStateRef.current) {
-      toggleFullscreenMode();
-    }
-    lastNorthButtonStateRef.current = northPressed;
-  }, [gamepadConnected, updateGameState, cleanupGame, toggleFullscreenMode]);
+    // Use the input mapper for gamepad input
+    mapGamepadInput(activeGamepad);
+  }, [gamepadConnected, mapGamepadInput]);
 
   const handleVisibilityChange = useCallback(() => {
     if (document.hidden && gameStateRef.current === 'playing') {
@@ -828,16 +558,7 @@ const Pong = () => {
     };
   }, []); // Empty dependency array - no dependencies needed for event listeners
 
-  // Separate useEffect for keyboard event listeners
-  useEffect(() => {
-    window.addEventListener('keydown', keyDownHandler);
-    window.addEventListener('keyup', keyUpHandler);
 
-    return () => {
-      window.removeEventListener('keydown', keyDownHandler);
-      window.removeEventListener('keyup', keyUpHandler);
-    };
-  }, [keyDownHandler, keyUpHandler]);
 
   // Separate useEffect for gamepad event listeners
   useEffect(() => {
@@ -917,6 +638,41 @@ const Pong = () => {
       }
     };
   }, [isFullscreenMode]);
+
+  // Register action handlers
+  useEffect(() => {
+    // Create the complete gameRefs object with all required properties
+    const completeGameRefs = {
+      gameStateRef,
+      upPressedRef,
+      downPressedRef,
+      isDragging,
+      touchStartY,
+      isMouseDragging,
+      mouseStartY,
+      player1YRef,
+      canvasRef,
+      isFullscreenMode,
+      setIsFullscreenMode,
+      inputSource
+    };
+
+    // Create gameFunctions object with all required functions
+    const gameFunctions = {
+      updateGameState,
+      cleanupGame,
+      toggleFullscreenMode,
+      constrainPaddle,
+      transformTouchCoordinates,
+      transformMouseCoordinates
+    };
+
+    // Create and register all action handlers
+    const handlerRegistry = createActionHandlerRegistry(completeGameRefs, GAME_CONFIG, gameFunctions);
+    const cleanup = registerAllHandlers(actionSystem, handlerRegistry);
+
+    return cleanup;
+  }, [actionSystem, updateGameState, cleanupGame, toggleFullscreenMode]);
 
   return (
     <Container fluid className="d-flex flex-column align-items-center py-4">
