@@ -64,40 +64,12 @@ const transformMouseCoordinates = (e, canvas, isFullscreenMode) => {
   let mouseX = e.clientX - rect.left;
   let mouseY = e.clientY - rect.top;
   
-  if (isFullscreenMode) {
-    // Handle fullscreen mode - use center-based coordinate transformation
-    const computedStyle = window.getComputedStyle(canvas);
-    const transform = computedStyle.transform;
-    
-    if (transform && transform !== 'none') {
-      // Extract scale values from transform matrix
-      const matrix = new DOMMatrix(transform);
-      const scaleX = matrix.a;
-      const scaleY = matrix.d;
-      
-      // Adjust mouse coordinates for scale using center-based approach
-      const canvasCenterX = rect.left + rect.width / 2;
-      const canvasCenterY = rect.top + rect.height / 2;
-      
-      // Convert to canvas coordinates
-      mouseX = (e.clientX - canvasCenterX) / scaleX + canvas.width / 2;
-      mouseY = (e.clientY - canvasCenterY) / scaleY + canvas.height / 2;
-    } else {
-      // Fallback for when no transform is applied
-      const scaleX = rect.width / canvas.width;
-      const scaleY = rect.height / canvas.height;
-      
-      mouseX = mouseX / scaleX;
-      mouseY = mouseY / scaleY;
-    }
-  } else {
-    // Adjust coordinates for normal mode when canvas is scaled (mobile)
-    const scaleX = rect.width / canvas.width;
-    const scaleY = rect.height / canvas.height;
-    
-    mouseX = mouseX / scaleX;
-    mouseY = mouseY / scaleY;
-  }
+  // Always use simple scaling approach - this works for both normal and fullscreen
+  const scaleX = rect.width / canvas.width;
+  const scaleY = rect.height / canvas.height;
+  
+  mouseX = mouseX / scaleX;
+  mouseY = mouseY / scaleY;
   
   return { x: mouseX, y: mouseY };
 };
@@ -193,54 +165,82 @@ const Pong = () => {
   }, [isFullscreenMode, navigate]);
 
   const handleFullscreenChange = useCallback(() => {
-    const isCurrentlyFullscreen = !!(document.fullscreenElement || 
-                                     document.webkitFullscreenElement || 
-                                     document.mozFullScreenElement || 
-                                     document.msFullscreenElement);
-    setIsFullscreenMode(isCurrentlyFullscreen);
-    
-    if (!isCurrentlyFullscreen) {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      
-      // Reset canvas styling to prevent overflow on mobile
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
-        canvas.style.width = '';
-        canvas.style.height = '';
-      }
-    }
+    // This is now handled by toggleFullscreenMode directly
+    // No need to listen for native fullscreen events
   }, []);
 
   const toggleFullscreenMode = useCallback(() => {
-    if (!isFullscreenMode) {
+    setIsFullscreenMode(prev => {
+      const newFullscreenState = !prev;
       const canvas = canvasRef.current;
-      if (canvas) {
-        const requestFullscreen = canvas.requestFullscreen || 
-                                 canvas.webkitRequestFullscreen || 
-                                 canvas.mozRequestFullScreen || 
-                                 canvas.msRequestFullscreen;
-        
-        if (requestFullscreen) {
-          requestFullscreen.call(canvas);
-          document.body.style.overflow = 'hidden';
-          document.documentElement.style.overflow = 'hidden';
-        }
-      }
-    } else {
-      const exitFullscreen = document.exitFullscreen || 
-                             document.webkitExitFullscreen || 
-                             document.mozCancelFullScreen || 
-                             document.msExitFullscreen;
       
-      if (exitFullscreen) {
-        exitFullscreen.call(document);
+      if (!canvas) return prev;
+      
+      if (newFullscreenState) {
+        // Enter custom fullscreen mode
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Calculate scale to fit canvas while maintaining aspect ratio
+        const scaleX = viewportWidth / canvas.width;
+        const scaleY = viewportHeight / canvas.height;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Apply custom fullscreen styling
+        canvas.style.position = 'fixed';
+        canvas.style.top = '50%';
+        canvas.style.left = '50%';
+        canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        canvas.style.zIndex = '9999';
+        canvas.style.maxWidth = 'none';
+        canvas.style.backgroundColor = '#000';
+        
+        // Hide page content and prevent scrolling
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        document.body.classList.add('pong-fullscreen');
+        
+        // Create style to hide other elements
+         const fullscreenStyle = document.createElement('style');
+         fullscreenStyle.id = 'pong-fullscreen-style';
+         fullscreenStyle.textContent = `
+           body.pong-fullscreen {
+             background-color: #808080 !important;
+           }
+           body.pong-fullscreen > *:not(canvas) {
+             visibility: hidden !important;
+           }
+           body.pong-fullscreen canvas {
+             visibility: visible !important;
+           }
+         `;
+         document.head.appendChild(fullscreenStyle);
+        
+      } else {
+        // Exit custom fullscreen mode
+        canvas.style.position = '';
+        canvas.style.top = '';
+        canvas.style.left = '';
+        canvas.style.transform = '';
+        canvas.style.zIndex = '';
+        canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
+        canvas.style.backgroundColor = '#000';
+        
+        // Restore page content and scrolling
         document.body.style.overflow = '';
         document.documentElement.style.overflow = '';
+        document.body.classList.remove('pong-fullscreen');
+        
+        // Remove fullscreen style
+        const fullscreenStyle = document.getElementById('pong-fullscreen-style');
+        if (fullscreenStyle) {
+          fullscreenStyle.remove();
+        }
       }
-    }
-  }, [isFullscreenMode]);
+      
+      return newFullscreenState;
+    });
+  }, []);
 
   const gamepadConnectHandler = useCallback((e) => {
     setGamepadConnected(true);
@@ -335,19 +335,12 @@ const Pong = () => {
       constrainPointToGameBounds(coords, frameOffset, gameWidth, gameHeight) : coords;
     
     // Check for pause button tap using the unified positioning logic
-    // In fullscreen mode, we need to use the actual canvas dimensions for button positioning
+    // Use original canvas dimensions for button positioning to match how the button is drawn
     const pauseButtonBounds = getPauseButtonBounds(frameOffset, gameWidth);
     
-    // Debug logging for fullscreen mode
-    if (isFullscreenMode) {
-      console.log('Touch Debug - Fullscreen Mode:');
-      console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
-      console.log('Original coords:', coords);
-      console.log('Constrained coords:', constrainedCoords);
-      console.log('Button bounds:', pauseButtonBounds);
-      console.log('Point in bounds:', isPointInBounds(constrainedCoords, pauseButtonBounds));
-    }
-    if (isPointInBounds(constrainedCoords, pauseButtonBounds)) {
+
+    // Use original coordinates to match how the button is drawn
+    if (isPointInBounds(coords, pauseButtonBounds)) {
       if (gameStateRef.current === 'playing') {
         updateGameState('paused');
       } else if (gameStateRef.current === 'paused') {
@@ -366,12 +359,14 @@ const Pong = () => {
         height: GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT
       };
       
-      if (isPointInBounds(constrainedCoords, exitButtonBounds)) {
+      // Use original coordinates to match how the button is drawn
+      if (isPointInBounds(coords, exitButtonBounds)) {
         cleanupGame();
         return;
       }
       
       // Check for unpause button tap (same bounds as pause button)
+      // Use original coordinates to match how the button is drawn
       if (isPointInBounds(coords, pauseButtonBounds)) {
         updateGameState('playing');
         return;
@@ -459,19 +454,11 @@ const Pong = () => {
       constrainPointToGameBounds(coords, frameOffset, gameWidth, gameHeight) : coords;
     
     // Check for pause button click using the unified positioning logic
-    // In fullscreen mode, we need to use the actual canvas dimensions for button positioning
+    // Use original canvas dimensions for button positioning to match how the button is drawn
     const pauseButtonBounds = getPauseButtonBounds(frameOffset, gameWidth);
-    
-    // Debug logging for fullscreen mode
-    if (isFullscreenMode) {
-      console.log('Mouse Debug - Fullscreen Mode:');
-      console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
-      console.log('Original coords:', coords);
-      console.log('Constrained coords:', constrainedCoords);
-      console.log('Button bounds:', pauseButtonBounds);
-      console.log('Point in bounds:', isPointInBounds(constrainedCoords, pauseButtonBounds));
-    }
-    if (isPointInBounds(constrainedCoords, pauseButtonBounds)) {
+
+    // Use original coordinates to match how the button is drawn
+    if (isPointInBounds(coords, pauseButtonBounds)) {
       if (gameStateRef.current === 'playing') {
         updateGameState('paused');
       } else if (gameStateRef.current === 'paused') {
@@ -490,13 +477,15 @@ const Pong = () => {
         height: GAME_CONFIG.UI.EXIT_BUTTON.HEIGHT
       };
       
-      if (isPointInBounds(constrainedCoords, exitButtonBounds)) {
+      // Use original coordinates to match how the button is drawn
+      if (isPointInBounds(coords, exitButtonBounds)) {
         cleanupGame();
         return;
       }
       
       // Check for unpause button click (same bounds as pause button)
-      if (isPointInBounds({ x: mouseX, y: mouseY }, pauseButtonBounds)) {
+      // Use original coordinates to match how the button is drawn
+      if (isPointInBounds(coords, pauseButtonBounds)) {
         updateGameState('playing');
         return;
       }
@@ -627,13 +616,35 @@ const Pong = () => {
 
   const handleBeforeUnload = useCallback(() => {
     if (isFullscreenMode) {
+      // Clean up fullscreen styles
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.style.position = '';
+        canvas.style.top = '';
+        canvas.style.left = '';
+        canvas.style.transform = '';
+        canvas.style.zIndex = '';
+        canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
+        canvas.style.backgroundColor = '#000';
+      }
+      
+      // Restore page content and scrolling
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
+      document.body.classList.remove('pong-fullscreen');
+      
+      // Remove fullscreen style
+      const fullscreenStyle = document.getElementById('pong-fullscreen-style');
+      if (fullscreenStyle) {
+        fullscreenStyle.remove();
+      }
     }
   }, [isFullscreenMode]);
 
   const handlePopState = useCallback(() => {
     if (isFullscreenMode) {
+      // Properly exit fullscreen mode when navigating back
+      setIsFullscreenMode(false);
       handleBeforeUnload();
     }
   }, [isFullscreenMode, handleBeforeUnload]);
@@ -878,20 +889,34 @@ const Pong = () => {
 
   // Separate useEffect for fullscreen listeners to avoid game restart
   useEffect(() => {
-    // Fullscreen change listeners
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
+    // No longer need fullscreen change listeners since we're using custom fullscreen
     return () => {
-      // Remove fullscreen change listeners
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      // Component unmount cleanup - ensure fullscreen is properly cleaned up
+      if (isFullscreenMode) {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          canvas.style.position = '';
+          canvas.style.top = '';
+          canvas.style.left = '';
+          canvas.style.transform = '';
+          canvas.style.zIndex = '';
+          canvas.style.maxWidth = GAME_CONFIG.CANVAS.MAX_WIDTH;
+          canvas.style.backgroundColor = '#000';
+        }
+        
+        // Restore page content and scrolling
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        document.body.classList.remove('pong-fullscreen');
+        
+        // Remove fullscreen style
+        const fullscreenStyle = document.getElementById('pong-fullscreen-style');
+        if (fullscreenStyle) {
+          fullscreenStyle.remove();
+        }
+      }
     };
-  }, [handleFullscreenChange]);
+  }, [isFullscreenMode]);
 
   return (
     <Container fluid className="d-flex flex-column align-items-center py-4">
