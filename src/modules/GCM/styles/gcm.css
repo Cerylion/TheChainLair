@@ -1,0 +1,39 @@
+/*
+ * Gamepad Control Module (GCM) – Base Styles (Scaffold)
+ * Namespaced CSS to style the virtual cursor overlay and ownership hints.
+ * These styles are inert until the overlay component and controller are wired.
+ */
+
+/* High z-index virtual cursor */
+.gcm-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 2147483647; /* max to stay above everything */
+  transform: translate(-50%, -50%);
+  will-change: left, top, transform;
+}
+
+/* Optional cursor ring for accessibility */
+.gcm-cursor--ring {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.6), 0 0 0 6px rgba(255, 255, 255, 0.9);
+}
+
+/* Hide native cursor when gamepad owns input */
+.gcm-hide-native-cursor,
+:root.gcm-hide-native-cursor {
+  cursor: none !important;
+}
+
+/* Reduced motion preference support */
+@media (prefers-reduced-motion: reduce) {
+  .gcm-cursor {
+    transition: none;
+  }
+}

@@ -38,6 +38,7 @@ import './styles/main.css';
 // ========================================
 // Root App component containing all application logic and routing
 import App from './App.js';
+import { GamepadControlProvider, CursorOverlay } from './modules/GCM/index.js';
 
 // ========================================
 // PERFORMANCE MONITORING
@@ -70,7 +71,10 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 // Render the main App component to the DOM
 // StrictMode is intentionally omitted for production build
 root.render(
-    <App />
+    <GamepadControlProvider config={{ mountPointer: false }}>
+        <App />
+        <CursorOverlay showRing={true} />
+    </GamepadControlProvider>
 );
 
 // ========================================
