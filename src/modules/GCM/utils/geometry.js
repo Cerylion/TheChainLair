@@ -6,10 +6,14 @@
 // SSR safety guards are handled by callers; these are pure math utilities.
 
 export function rectCenter(rect) {
+  // Computes the center point of a DOMRect-like box.
+  // Inputs: rect with { left, top, width, height }; Output: { x, y }.
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 }
 
 export function isInDirection(fromRect, toRect, direction) {
+  // Checks if toRect lies roughly in the given cardinal direction from fromRect.
+  // Inputs: two rects and direction string; Output: boolean.
   const fc = rectCenter(fromRect);
   const tc = rectCenter(toRect);
   const dx = tc.x - fc.x;
@@ -24,6 +28,8 @@ export function isInDirection(fromRect, toRect, direction) {
 }
 
 export function directionalMetric(fromCenter, toCenter, direction) {
+  // Scores how well toCenter aligns with direction relative to fromCenter.
+  // Inputs: two points and direction string; Output: number (lower is better).
   // Lower is better; favor alignment with direction and proximity.
   const dx = toCenter.x - fromCenter.x;
   const dy = toCenter.y - fromCenter.y;

@@ -23,10 +23,14 @@ export class PointerDriver {
   }
 
   mount() {
+    // Creates and attaches the visual cursor element to the container.
+    // Inputs: none. Output: none (DOM side-effects).
     if (!canUseDOM || this._mounted || !this.container) return;
     const el = document.createElement('div');
     el.className = `gcm-cursor${this.showRing ? ' gcm-cursor--ring' : ''}`;
     el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('role', 'presentation');
+    el.setAttribute('tabindex', '-1');
     // Use transform-based positioning for smoother movement
     el.style.transform = `translate3d(${this.position.x}px, ${this.position.y}px, 0) translate(-50%, -50%)`;
     this.container.appendChild(el);
@@ -35,6 +39,8 @@ export class PointerDriver {
   }
 
   unmount() {
+    // Removes the cursor element and cancels any pending animation.
+    // Inputs: none. Output: none; ensures native cursor visibility.
     if (!canUseDOM || !this._mounted) return;
     if (this._rafId) {
       try { window.cancelAnimationFrame(this._rafId); } catch (_) {}
@@ -51,12 +57,16 @@ export class PointerDriver {
   }
 
   setRing(enabled) {
+    // Toggles ring styling for accessibility/visibility.
+    // Inputs: boolean; Output: none.
     this.showRing = !!enabled;
     if (!this.cursorEl) return;
     this.cursorEl.classList.toggle('gcm-cursor--ring', !!enabled);
   }
 
   setPosition(x, y) {
+    // Schedules the cursor to move to (x, y), clamped to viewport.
+    // Inputs: x, y numbers; Output: none (batched via rAF).
     if (!canUseDOM) return;
     // Queue target position and batch DOM writes via rAF
     const clampedX = Math.max(0, Math.min(window.innerWidth, x));
@@ -69,6 +79,8 @@ export class PointerDriver {
 
   // Move the pointer by delta and emit synthetic mousemove at the new position
   moveBy(dx, dy) {
+    // Applies delta movement and dispatches a synthetic mousemove at the new point.
+    // Inputs: dx, dy numbers; Output: none.
     if (!canUseDOM) return;
     const nextX = Math.max(0, Math.min(window.innerWidth, this.position.x + dx));
     const nextY = Math.max(0, Math.min(window.innerHeight, this.position.y + dy));
@@ -81,6 +93,8 @@ export class PointerDriver {
 
   // Dispatch helper at current cursor position
   dispatch(type, options = {}) {
+    // Emits a synthetic mouse event of given type at current/pending position.
+    // Inputs: type string, options init; Output: none.
     if (!canUseDOM) return;
     try {
       const px = (this._pendingPos && typeof this._pendingPos.x === 'number') ? this._pendingPos.x : this.position.x;
@@ -89,20 +103,32 @@ export class PointerDriver {
     } catch (_) {}
   }
 
+  // Primary button helpers
   mousedown() { this.dispatch('mousedown', { buttons: 1 }); }
   mouseup() { this.dispatch('mouseup', { buttons: 0 }); }
   click() { this.dispatch('click'); }
 
+  // Secondary (right) button helpers
+  mousedownRight() { this.dispatch('mousedown', { button: 2, buttons: 2 }); }
+  mouseupRight() { this.dispatch('mouseup', { button: 2, buttons: 0 }); }
+  contextmenu() { this.dispatch('contextmenu', { button: 2 }); }
+
   getPosition() {
+    // Returns a shallow copy of the current cursor position.
+    // Inputs: none. Output: { x, y }.
     return { ...this.position };
   }
 
   hideNativeCursorGlobally(enable) {
+    // Toggles native cursor visibility via a root class.
+    // Inputs: boolean; Output: none.
     if (!canUseDOM) return;
     document.documentElement.classList.toggle('gcm-hide-native-cursor', !!enable);
   }
 
   _flush(ts) {
+    // Internal: applies batched position update with optional smoothing.
+    // Inputs: timestamp (rAF); Output: none.
     this._rafId = null;
     if (!canUseDOM || !this.cursorEl) return;
     if (!this._pendingPos) return;

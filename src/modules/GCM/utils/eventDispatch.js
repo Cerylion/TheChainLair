@@ -11,6 +11,8 @@ const MOVE_THROTTLE_MS = 16; // default throttle interval
 let lastMouseMoveTs = 0;
 
 export function elementFromViewportPoint(x, y) {
+  // Returns the topmost DOM element at viewport coordinates (x, y).
+  // Inputs: x, y numbers in CSS pixels. Output: Element or null.
   if (!canUseDOM) return null;
   try {
     return document.elementFromPoint(x, y);
@@ -20,6 +22,8 @@ export function elementFromViewportPoint(x, y) {
 }
 
 export function dispatchMouseEvent(type, x, y, options = {}) {
+  // Dispatches a synthetic mouse event at (x, y) to the hit element.
+  // Inputs: type string, x/y numbers, optional init. Output: { target, event } or null.
   if (!canUseDOM) return null;
   // Throttle synthetic mousemove to avoid event floods
   if (type === 'mousemove') {

@@ -310,7 +310,7 @@ Each step is limited to modifying a maximum of two files. Use the checkboxes to 
   - Detect primary button state transitions and emit `buttonChange` events.
   - Provider dispatches `mousedown`/`mouseup`/`click` based on `clickMode` (tap/hold).
 
-## Status Update – Click Interaction
+ **Status Update – Click Interaction**
 - Observed: pointer moves smoothly, but click does not interact.
 - Likely cause: `PointerDriver` position not synced with controller cursor when using React overlay only; synthetic click occurs at stale coordinates.
 
@@ -338,58 +338,100 @@ Each step is limited to modifying a maximum of two files. Use the checkboxes to 
   - Ensure styles load via manual import or upcoming React Provider injection.
 
  - [X] Finalize React provider wiring (Files: `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`, `src/modules/GCM/adapters/react/useGamepadControl.js`)
-  - Provide ownership, cursor position, connected pads, config.
+ - Provide ownership, cursor position, connected pads, config.
 
- - [ ] React overlay usage config (Files: `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`, `README.md`)
+ - [x] Align CursorOverlay transform with PointerDriver (Files: `src/modules/GCM/adapters/react/CursorOverlay.jsx`, `src/modules/GCM/drivers/PointerDriver.js`)
+  - Use `translate3d(x, y, 0) translate(-50%, -50%)` for GPU-accelerated positioning and consistency.
+  - Acceptance: Cursor overlay moves smoothly and matches pointer driver positioning with no visual regressions.
+
+ - [x] Guard synthetic events in ownership listeners (Files: `src/modules/GCM/core/GamepadController.js`)
+  - Ignore synthetic input using `event.isTrusted === false` and/or a custom synthetic marker (e.g., `detail.__gcmSynthetic`) in mouse/wheel/keyboard handlers.
+  - Goal: Prevent ownership flipping to `mouse` during synthetic pointer and upcoming wheel dispatches so `gamepad` retains control while emulating input.
+
+ - [x] Map right‑click (east / B) (Files: `src/modules/GCM/core/GamepadController.js`, `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`, `src/modules/GCM/drivers/PointerDriver.js`, `src/modules/GCM/utils/eventDispatch.js`)
+ - Emit `buttonChange` for `east`; in Provider, dispatch right‑click via `mousedown`/`mouseup` with `{ button: 2 }`. Optionally emit `contextmenu` on release for sites relying on it.
+ - Acceptance: Elements react to right‑click without breaking current primary click behavior.
+
+ - [X] Implement Scroll Mode with programmatic scrolling (Files: `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`, `src/modules/GCM/drivers/ScrollDriver.js`)
+   - Toggle scroll mode on `north / Y` release; disable pointer movement while active and show ring.
+   - Map left stick Y to container/page scrolling using `ScrollDriver.scrollByAtPoint()` (no synthetic WheelEvent).
+   - Introduce `SCROLL_SPEED_MULTIPLIER` constant (default `1.5`) to globally adjust scroll speed.
+   - Acceptance: When scroll mode is toggled on, left stick smoothly scrolls the nearest scrollable container or the page; speed is clearly affected by the multiplier constant.
+
+ - [x] React overlay usage config (Files: `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`, `README.md`)
    - When using `CursorOverlay` in React, pass `config={{ mountPointer: false }}` to avoid duplicate overlays.
    - Document this pattern and provide example in README.
 
- - [ ] Add accessibility safeguards for synthetic events (Files: `src/modules/GCM/drivers/FocusDriver.js`, `src/modules/GCM/adapters/react/CursorOverlay.jsx`)
+ - [x] Add accessibility safeguards for synthetic events (Files: `src/modules/GCM/drivers/FocusDriver.js`, `src/modules/GCM/adapters/react/CursorOverlay.jsx`)
   - Ensure synthetic events do not break screen readers; add ARIA hints for focus movement.
   - Revert ARIA adjustments on unmount to restore defaults.
 
- - [ ] Add configuration defaults and mapping (Files: `src/modules/GCM/core/GamepadController.js`, `src/modules/GCM/index.js`)
+ - [x] Add configuration defaults and mapping (Files: `src/modules/GCM/core/GamepadController.js`, `src/modules/GCM/index.js`)
   - Define axes/buttons mappings, deadzone, sensitivity, click mode.
   - Expose `setConfig` and defaults through `index.js`.
 
- - [ ] Add gamepad lifecycle robustness (Files: `src/modules/GCM/core/GamepadController.js`, `src/modules/GCM/index.js`)
+ - [x] Add gamepad lifecycle robustness (Files: `src/modules/GCM/core/GamepadController.js`, `src/modules/GCM/index.js`)
   - Handle connect/disconnect, index shifts, and purge stale `navigator.getGamepads()` entries.
   - Debounce device discovery and state updates to avoid thrash.
 
- - [ ] Add graceful fallbacks and Provider enabled state (Files: `src/modules/GCM/core/GamepadController.js`, `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`)
+ - [x] Add graceful fallbacks and Provider enabled state (Files: `src/modules/GCM/core/GamepadController.js`, `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`)
   - Degrade gracefully when Gamepad API is missing; expose `enabled` in Provider context.
   - Provide disabled module state; reserve keyboard mapping as future optional fallback.
 
- - [ ] Add basic tests (Files: `src/modules/GCM/__tests__/controller.test.js`, `src/modules/GCM/__tests__/pointer.test.js`)
-  - Unit tests for normalization/ownership; integration tests for pointer events.
+ - [x] Add basic tests (Files: `src/modules/GCM/__tests__/controller.test.js`, `src/modules/GCM/__tests__/pointer.test.js`)
+ - Unit tests for normalization/ownership; integration tests for pointer events.
 
- - [ ] Add SSR tests (Files: `src/modules/GCM/__tests__/ssr.test.js`, `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`)
+ - [x] Add controller lifecycle tests (Files: `src/modules/GCM/__tests__/controller_lifecycle.test.js`, `src/modules/GCM/core/GamepadController.js`)
+   - Verify debounced device scanning emits `connected` and `disconnected` when `navigator.getGamepads()` changes.
+   - Acceptance: `connected` payloads are arrays of device info; `disconnected` contains removed IDs.
+
+ - [x] Add Provider scroll mode test (Files: `src/modules/GCM/__tests__/provider_scroll.test.js`, `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`)
+   - Assert `setScrollMode(true)` adds `gcm-cursor--ring` and flips `config.pointerEnabled` to `false`; off restores ring removal and `pointerEnabled: true`.
+   - Uses React 18 `createRoot` in tests to align with Provider implementation.
+
+ - [x] Add FocusDriver directional navigation tests (Files: `src/modules/GCM/__tests__/focus.test.js`, `src/modules/GCM/drivers/FocusDriver.js`)
+   - Confirm `focusByDirection('right'|'left')` moves to spatial neighbor; skip elements with `aria-hidden="true"`.
+   - Provide deterministic `getBoundingClientRect` stubs for elements to ensure reliable JSDOM geometry.
+
+ - [x] Add SSR tests (Files: `src/modules/GCM/__tests__/ssr.test.js`, `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`)
   - Server-render Provider and assert no DOM mutations or errors; verify client hydration.
   - Ensure style injection is idempotent and does not duplicate on hydration.
+  - Acceptance: SSR render does not mutate DOM; hydration injects a single style tag; `styleInjection: false` skips injection. All SSR tests pass in Jest.
 
- - [ ] Add minimal e2e tests (Files: `src/modules/GCM/__tests__/e2e/basic.e2e.test.js`, `public/index.html`)
-  - Verify overlay mounts, movement updates, focus navigation on a demo page.
-  - Smoke test ownership switching and cursor visibility toggling via CSS.
+ - [x] Add minimal e2e tests (Files: `src/modules/GCM/__tests__/e2e/basic.e2e.test.js`)
+  - Added Jest e2e-style test to render a demo and toggle `scrollMode`.
+  - Verifies overlay presence and `scrollMode` changes via demo buttons.
+  - Visual check available at `/test/gcm-demo` route for manual verification.
 
- - [ ] Wire minimal app integration (Files: `src/App.js`, `src/modules/GCM/index.js`)
-  - Import provider into `App.js` and wrap the app.
-  - Ensure public API shape matches integration.
+ - [x] Wire minimal app integration (scoped to demo route) (Files: `src/index.js`, `src/App.js`)
+  - Keep `GamepadControlProvider` scoped to the `/test/gcm-demo` route (Option A).
+  - Remove global wrapper from `src/index.js`; public API shape remains consistent.
 
- - [ ] Add demo page to visualize inputs (Files: `src/pages/Games.js`, `src/App.js`)
-  - Render live gamepad state and cursor ownership.
-  - Add route or section in `App.js` for demo.
+ - [x] Add demo page to visualize inputs (Files: `src/pages/GcmDemo.js`, `src/App.js`)
+  - Implemented status panel showing `running`, `ownership`, cursor coordinates, and connected gamepad count.
+  - Added route `/test/gcm-demo` in `App.js` for quick manual verification.
 
- - [ ] Improve cleanup and lifecycle (adapters) (Files: `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`, `src/modules/GCM/adapters/vanilla/initGCM.js`)
-  - Provider unmount stops controller and unmounts overlay; provide consistent teardown.
-  - Vanilla teardown restores cursor state and removes DOM artifacts.
+ - [x] Improve cleanup and lifecycle (adapters) (Files: `src/modules/GCM/adapters/react/GamepadControlProvider.jsx`, `src/modules/GCM/adapters/vanilla/initGCM.js`)
+  - Provider unmount stops controller and unmounts overlay; added safety to restore native cursor class.
+  - Vanilla teardown ensures overlay removal, controller stop, and native cursor restoration.
 
- - [ ] Document configuration surface (Files: `README.md`, `src/modules/GCM/index.js`)
-  - Document `mountPointer`, `autoStart`, `showRing`, `styleInjection`, and future `hideNativeCursor`/`container` overrides.
-  - Expose defaults and config setters via the public API.
+ - [x] Document configuration surface (Files: `README.md`, `src/modules/GCM/index.js`)
+   - Root README now includes a "GCM Configuration Surface" section covering `mountPointer`, `autoStart`, `showRing`, `styleInjection`, common defaults, and notes on future `hideNativeCursor`/`container` overrides.
+   - Public API exposes `GCM_DEFAULT_CONFIG` and `GCM_CONFIG_KEYS`; runtime updates via `controller.setConfig(partial)` are documented with React/vanilla examples.
+
+ - [x] Document integration modes (Files: `src/modules/GCM/README.md`)
+  - Added "Integration Modes" section describing modular vs global setup with code examples, pros/cons, and switching instructions.
+  - Clarifies current project state: modular provider on demo route; outlines steps for global integration post-export.
 
 ## Future Enhancements
 
-- Right‑stick scroll; map axes to page scroll.
 - Haptics feedback on click (where supported).
 - Custom per‑page mappings via route config.
 - Multi‑gamepad arbitration and handoff.
+
+
+## Observed Behavior Note
+
+- Scroll mode inconsistency: holding the left stick at strong deflection scrolls continuously but slow, while a quick push-and-release produces a faster scroll burst.
+- Impact: minor; does not break the module, acceptable for now. We will move on and revisit tuning later.
+- Potential follow-ups: refine time normalization and minimum delta; consider velocity-based curves or synthetic WheelEvent with delta smoothing.

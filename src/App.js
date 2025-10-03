@@ -81,6 +81,7 @@ import Pong from './pages/pong/Pong';              // Pong game component
 import PongV2 from './pages/pongV2/PongV2';        // Refined Pong game component
 import TestActionSystem from './pages/pongV2/TestActionSystem'; // Action system test component
 import TestInputMapper from './pages/pongV2/test/TestInputMapper'; // Input mapper test component
+import GcmDemo from './pages/GcmDemo'; // Gamepad Control Module demo page
 
 /**
  * App Component
@@ -253,6 +254,16 @@ function App() {
               - Provides browser-based testing for useInputMapper hook
             */}
             <Route path="/test/input-mapper" element={<TestInputMapper />} />
+
+            {/* ========================================
+                GCM DEMO ROUTE
+                ======================================== */}
+            {/*
+              Demo route for Gamepad Control Module
+              - path="/test/gcm-demo": Matches /test/gcm-demo URL
+              - element={<GcmDemo />}: Renders the GCM demo page with Provider
+            */}
+            <Route path="/test/gcm-demo" element={<GcmDemo />} />
             
           </Routes>
         </main>

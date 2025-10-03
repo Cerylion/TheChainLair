@@ -24,11 +24,13 @@ function isElementVisible(el) {
   if (!canUseDOM) return true;
   const rect = el.getBoundingClientRect();
   const style = window.getComputedStyle ? window.getComputedStyle(el) : { visibility: 'visible', display: 'block' };
+  const ariaHidden = (el && el.getAttribute) ? el.getAttribute('aria-hidden') : null;
   return (
     style.visibility !== 'hidden' &&
     style.display !== 'none' &&
     rect.width > 0 &&
-    rect.height > 0
+    rect.height > 0 &&
+    ariaHidden !== 'true'
   );
 }
 
